@@ -3,14 +3,24 @@ import json
 import shutil
 
 # get the values from cookiecutter.json
+project_slug = "{{ cookiecutter.project_slug }}"
 include_data = "{{ cookiecutter.include_data }}".lower()
 project_type = "{{ cookiecutter.project_type }}".lower()
 
 # this is the base directory where the script is located
-project_dir = os.path.abspath(os.path.dirname(__file__))
+base_dir = os.path.abspath(os.path.dirname(__file__))
+project_dir = os.path.join(base_dir, project_slug)
 
 # test for data directory
 data_dir = os.path.join(project_dir, "data")
+
+# test for params file
+params_path = os.path.join(project_dir, "conf", "params.json")
+
+print(f"Post generation script started in {project_dir}")
+print(f"Project type selected: {project_type}")
+print(f"Include data folder: {include_data}")
+print(f"Params file path: {params_path}")
 
 # If include_data is "no" remove the data directory
 if include_data == "no":
@@ -40,10 +50,11 @@ unknown_params = {
 
 if project_type == "wf-basecalling":
     with open(params_path, "w") as f:
-        json.dump(basecalling_params, f, indent=4)
-
+        json.dump(wf_basecalling_params, f, indent=4)
+        f.write('\n')
 else:
     with open(params_path, "w") as f:
         json.dump(unknown_params, f, indent=4)
+        f.write('\n')
 
 print(f"Project type set to '{project_type}'. Configuration file 'conf/params.json' updated accordingly.")
