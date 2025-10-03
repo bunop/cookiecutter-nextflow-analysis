@@ -7,9 +7,13 @@ project_slug = "{{ cookiecutter.project_slug }}"
 include_data = "{{ cookiecutter.include_data }}".lower()
 project_type = "{{ cookiecutter.project_type }}".lower()
 
-# this is the base directory where the script is located
-base_dir = os.path.abspath(os.path.dirname(__file__))
-project_dir = os.path.join(base_dir, project_slug)
+# get current working directory
+cwd = os.path.abspath(os.getcwd())
+
+# if the cwd contains already the project (e.g. cwd == project root) use it,
+# otherwise fallback to the hook file location + project_slug
+possible_proj = cwd if os.path.basename(cwd) == project_slug or os.path.isdir(os.path.join(cwd, "conf")) else os.path.join(os.path.abspath(os.path.dirname(__file__)), project_slug)
+project_dir = os.path.abspath(possible_proj)
 
 # test for data directory
 data_dir = os.path.join(project_dir, "data")
