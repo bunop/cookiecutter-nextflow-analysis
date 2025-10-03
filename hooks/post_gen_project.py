@@ -58,3 +58,4 @@ else:
         f.write('\n')
 
 print(f"Project type set to '{project_type}'. Configuration file 'conf/params.json' updated accordingly.")
+print("Please edit it further as needed.")
