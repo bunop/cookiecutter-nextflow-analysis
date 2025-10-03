@@ -1,0 +1,4 @@
+{
+    "project_slug": "my_analysis",
+    "include_data": ["yes", "no"]
+}
