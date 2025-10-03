@@ -1,4 +1,5 @@
 {
     "project_slug": "my_analysis",
-    "include_data": ["yes", "no"]
+    "include_data": ["yes", "no"],
+    "project_type": ["unknown", "wf-basecalling"]
 }
