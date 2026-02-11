@@ -1,5 +1,12 @@
 {
     "project_slug": "my_analysis",
     "include_data": true,
-    "project_type": ["unknown", "wf-basecalling"]
+    "project_type": ["unknown", "wf-basecalling", "nf-core/methylseq"],
+    "nextflow_as_a_job": false,
+    "__prompts__": {
+        "project_slug": "Enter the name of your project (used as folder name and prefix for files):",
+        "include_data": "Do you want to include a 'data/' folder in the project structure?",
+        "project_type": "Select the type of analysis you want to set up:",
+        "nextflow_as_a_job": "Do you want to set up a launch script for running Nextflow as a job on an HPC cluster?"
+    }
 }

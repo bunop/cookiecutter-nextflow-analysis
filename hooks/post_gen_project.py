@@ -8,6 +8,8 @@ project_slug = "{{ cookiecutter.project_slug }}"
 include_data_raw = "{{ cookiecutter.include_data }}".strip().lower()
 include_data = include_data_raw in ("yes", "y", "true", "1")
 project_type = "{{ cookiecutter.project_type }}".lower()
+nextflow_as_a_job_raw = "{{ cookiecutter.nextflow_as_a_job }}".strip().lower()
+nextflow_as_a_job = nextflow_as_a_job_raw in ("yes", "y", "true", "1")
 
 # get current working directory
 cwd = os.path.abspath(os.getcwd())
@@ -20,7 +22,9 @@ project_dir = os.path.abspath(possible_proj)
 # define data directory
 data_dir = os.path.join(project_dir, "data")
 
-# test for params file
+# define scripts directory
+scripts_dir = os.path.join(project_dir, "scripts")
+
 # define params file path
 params_path = os.path.join(project_dir, "conf", "params.json")
 
@@ -28,14 +32,18 @@ print(f"Post generation script started in {project_dir}")
 print(f"Project type selected: {project_type}")
 print(f"Include data folder: {include_data}")
 print(f"Params file path: {params_path}")
+print(f"Nextflow as a job: {nextflow_as_a_job}")
+print(f"Scripts directory path: {scripts_dir}")
 
 # If include_data is false, remove the data directory
 if not include_data:
     if os.path.isdir(data_dir):
         shutil.rmtree(data_dir)
         print("Folder 'data/' removed as requested.")
-    else:
-        print("No 'data/' folder to remove.")
+
+if not nextflow_as_a_job:
+    # If not setting up Nextflow as a job, remove the launch script
+    os.remove(os.path.join(scripts_dir, "launch.sh"))
 
 # some template configurations for different project types
 wf_basecalling_params = {
@@ -50,8 +58,20 @@ wf_basecalling_params = {
     "out_dir": "output"
 }
 
+nf_core_methylseq_params = {
+    "input": "<your input here>",
+    "fasta": "<genome fasta file>",
+    "aligner": "bismark",
+    "rrbs": True,
+    "outdir": "<your results folder>",
+    "save_reference": False,
+    "save_align_intermeds": False,
+    "save_trimmed": False
+}
+
 unknown_params = {
-    "input": "<your input here>"
+    "input": "<your input here>",
+    "outdir": "<your results folder>"
 }
 
 
@@ -59,6 +79,12 @@ if project_type == "wf-basecalling":
     with open(params_path, "w") as f:
         json.dump(wf_basecalling_params, f, indent=4)
         f.write('\n')
+
+elif project_type == "nf-core/methylseq":
+    with open(params_path, "w") as f:
+        json.dump(nf_core_methylseq_params, f, indent=4)
+        f.write('\n')
+
 else:
     with open(params_path, "w") as f:
         json.dump(unknown_params, f, indent=4)
