@@ -2,9 +2,16 @@
 .nextflow*
 work/
 data/
+data*
 results/
+results*
 .DS_Store
 testing/
 testing*
 *.pyc
 null/
+genome/
+genome*
+*.out
+*.err
+*.log
