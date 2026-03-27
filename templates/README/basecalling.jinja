@@ -1,0 +1,174 @@
+Open [base.config](https://github.com/bunop/wf-basecalling/blob/multiple_calling/base.config)
+in [wf-basecalling](https://github.com/bunop/wf-basecalling/tree/multiple_calling)
+custom github repository (which support multiple models with basecalling), and
+search for `container_sha_basecalling` (should be at the beginning of file):
+
+```groovy
+<paste params directive here>
+```
+
+Then collect the dorado docker image with the following command (using the sha
+from `base.config`):
+
+```bash
+docker pull ontresearch/dorado:<collect container_sha_basecalling>
+```
+
+## Update models
+
+To update the models, run the following command (again, mind the sha):
+
+```bash
+mkdir -p /data/analyses/dorado_models/
+docker run -ti --rm --user $(id -u):$(id -g) --group-add 100 \
+    --volume /data/analyses/dorado_models/:/dorado_models/ \
+    ontresearch/dorado:<collect container_sha_basecalling> \
+    dorado download --models-directory /dorado_models/
+```
+
+Then ensure that the `conf/custom.config` file has the correct path to the models:
+
+```groovy
+env {
+    DRD_MODELS_PATH = '/dorado_models'
+}
+
+docker {
+    runOptions = '--user $(id -u):$(id -g) --group-add 100 --volume /data/analyses/dorado_models/:/dorado_models'
+}
+```
+
+> [!NOTE]
+> the models are downloaded to the `/data/analyses/dorado_models/` directory
+
+## Collect data
+
+Create symlinks to the pod5 files:
+
+```bash
+mkdir -p data/pod5
+cd data/pod5
+find <pod 5 folder> -type f -name "*.pod5" -exec ln -s {} . \;
+```
+
+## Creating samplesheet
+
+Create `conf/samplesheet.csv` like this::
+
+```csv
+experiment_id,kit,flow_cell_id,barcode,alias
+< fill with data >
+```
+
+Other information can be obtained from `report_*.json`
+file using `jq`:
+
+```bash
+jq -r '.protocol_run_info' report_*.json | less
+```
+
+And from `sample_sheet_*.csv` file.
+
+## List avalable models
+
+To list the available models, run the following command:
+
+```bash
+docker run -ti --rm --user $(id -u):$(id -g) --group-add 100 \
+    --volume /data/analyses/dorado_models/:/data/analyses/dorado_models/ \
+    ontresearch/dorado:<collect container_sha_basecalling> \
+    dorado download --list-structured | grep -v Running | \
+    jq -r '.["dna_r10.4.1_e8.2_400bps_5khz"].simplex_models["dna_r10.4.1_e8.2_400bps_sup@v5.2.0"]'
+```
+
+You will get an output like this:
+
+```json
+< paste available dorado models >
+```
+
+You will need specify models belonging to different context (ex: `C` and `A`;
+`CG` and `C` are considered same context)
+
+## Calling wf-basecalling pipeline
+
+Called the latest `wf-basecalling` pipeline (`v1.5.8`) customize to support
+different models with different context (https://github.com/bunop/wf-basecalling/tree/multiple_calling)
+using:
+
+```bash
+nextflow run bunop/wf-basecalling -r v1.5.8 -profile standard -resume \
+    -c conf/custom.config -params-file conf/params.json
+```
+
+> [!NOTE]
+> is not possible to call `--duplex=true` and `--barcode_kit=XXX`
+> at the same time, *demultiplexing* should be done after basecalling.
+
+## Post processing
+
+### calling PyCOQC
+
+Calculate quality control metrics using `pycoQC`:
+
+```bash
+docker run -ti --rm --user $(id -u):$(id -g) -v ${PWD}/output:/data \
+    community.wave.seqera.io/library/pip_pycoqc_setuptools:31d5a8754dcc1b68 \
+    pycoQC -f /data/SAMPLE.summary.tsv.gz -o /data/SAMPLE.summary.html
+```
+
+### Join passed simplex and duplex reads
+
+Called reads are divided into two groups: `simplex` and `duplex` for both passed
+and failed reads:
+
+```text
+SAMPLE.fail.duplex.cram
+SAMPLE.fail.simplex.cram
+SAMPLE.pass.duplex.cram
+SAMPLE.pass.simplex.cram
+```
+
+Let's join the `pass` reads into a single file:
+
+```bash
+docker run -ti --rm --user $(id -u):$(id -g) -v ${PWD}/output:/data \
+    quay.io/biocontainers/samtools:1.21--h50ea8bc_0 \
+    samtools merge -o /data/SAMPLE.pass.all.cram /data/SAMPLE.pass.duplex.cram /data/SAMPLE.pass.simplex.cram
+docker run -ti --rm --user $(id -u):$(id -g) -v ${PWD}/output:/data \
+    quay.io/biocontainers/samtools:1.21--h50ea8bc_0 \
+    samtools index /data/SAMPLE.pass.all.cram
+```
+
+### Demultiplexing
+
+> [!NOTE]
+> try the `--emit-report` option
+> try the `--emit-cram` option
+
+Do demultiplexing using `dorado`, this to produce both `fastq` files:
+
+```bash
+mkdir demux-fastq
+docker run -ti --rm --user $(id -u):$(id -g) --group-add 100 --volume ${PWD}:/data \
+    ontresearch/dorado:<collect container_sha_basecalling> \
+    dorado demux --kit-name SQK-NBD114-24 --threads 2 --verbose --output-dir /data/demux-fastq \
+    --sample-sheet /data/conf/samplesheet.csv --emit-fastq /data/output/SAMPLE.pass.all.cram
+```
+
+pack demultiplexed reads:
+
+```bash
+cd demux-fastq
+gzip *.fastq
+```
+
+and for `ubam` files:
+
+```bash
+mkdir demux-ubam
+docker run -ti --rm --user $(id -u):$(id -g) --group-add 100 --volume ${PWD}:/data \
+    ontresearch/dorado:<collect container_sha_basecalling> \
+    dorado demux --kit-name SQK-NBD114-24 --threads 2 --verbose --output-dir /data/demux-ubam \
+    --sample-sheet /data/conf/samplesheet.csv /data/output/SAMPLE.pass.all.cram
+```
