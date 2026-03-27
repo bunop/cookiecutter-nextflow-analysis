@@ -5,6 +5,8 @@ data/
 data*
 results/
 results*
+output/
+demux-*/
 .DS_Store
 testing/
 testing*
@@ -15,3 +17,4 @@ genome*
 *.out
 *.err
 *.log
+*.xls*
