@@ -1,3 +1,6 @@
+
+## Collect dorado docker image
+
 Open [base.config](https://github.com/bunop/wf-basecalling/blob/multiple_calling/base.config)
 in [wf-basecalling](https://github.com/bunop/wf-basecalling/tree/multiple_calling)
 custom github repository (which support multiple models with basecalling), and
@@ -102,7 +105,7 @@ nextflow run bunop/wf-basecalling -r v1.5.8 -profile standard -resume \
 ```
 
 > [!NOTE]
-> is not possible to call `--duplex=true` and `--barcode_kit=XXX`
+> is not possible to call `--duplex=true` and `--barcode_kit=XXX-XXXXX-XX`
 > at the same time, *demultiplexing* should be done after basecalling.
 
 ## Post processing
@@ -142,25 +145,21 @@ docker run -ti --rm --user $(id -u):$(id -g) -v ${PWD}/output:/data \
 
 ### Demultiplexing
 
-> [!NOTE]
-> try the `--emit-report` option
-> try the `--emit-cram` option
-
 Do demultiplexing using `dorado`, this to produce both `fastq` files:
 
 ```bash
 mkdir demux-fastq
 docker run -ti --rm --user $(id -u):$(id -g) --group-add 100 --volume ${PWD}:/data \
     ontresearch/dorado:<collect container_sha_basecalling> \
-    dorado demux --kit-name SQK-NBD114-24 --threads 2 --verbose --output-dir /data/demux-fastq \
-    --sample-sheet /data/conf/samplesheet.csv --emit-fastq /data/output/SAMPLE.pass.all.cram
+    dorado demux --kit-name XXX-XXXXX-XX --threads 2 --verbose --output-dir /data/demux-fastq \
+    --sample-sheet /data/conf/samplesheet.csv --emit-fastq /data/output/SAMPLE.pass.all.cram \
+    --emit-summary
 ```
 
 pack demultiplexed reads:
 
 ```bash
-cd demux-fastq
-gzip *.fastq
+find demux-fastq/ -type f -iname "*.fastq" -exec gzip {} \;
 ```
 
 and for `ubam` files:
@@ -169,6 +168,7 @@ and for `ubam` files:
 mkdir demux-ubam
 docker run -ti --rm --user $(id -u):$(id -g) --group-add 100 --volume ${PWD}:/data \
     ontresearch/dorado:<collect container_sha_basecalling> \
-    dorado demux --kit-name SQK-NBD114-24 --threads 2 --verbose --output-dir /data/demux-ubam \
-    --sample-sheet /data/conf/samplesheet.csv /data/output/SAMPLE.pass.all.cram
+    dorado demux --kit-name XXX-XXXXX-XX --threads 2 --verbose --output-dir /data/demux-ubam \
+    --sample-sheet /data/conf/samplesheet.csv /data/output/SAMPLE.pass.all.cram \
+    --emit-summary
 ```
