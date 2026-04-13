@@ -14,35 +14,56 @@ Then collect the dorado docker image with the following command (using the sha
 from `base.config`):
 
 ```bash
+{% if cookiecutter.with_docker %}
 docker pull ontresearch/dorado:<collect container_sha_basecalling>
-```
+{% else %}
+singularity pull $NXF_SINGULARITY_CACHEDIR/ontresearch-dorado-<collect container_sha_basecalling>.img \
+    docker://ontresearch/dorado:<collect container_sha_basecalling>
+{% endif %}
+````
 
 ## Update models
 
 To update the models, run the following command (again, mind the sha):
 
 ```bash
-mkdir -p /data/analyses/dorado_models/
+mkdir -p <your_dorado_models_path>
+{% if cookiecutter.with_docker %}
 docker run -ti --rm --user $(id -u):$(id -g) --group-add 100 \
-    --volume /data/analyses/dorado_models/:/dorado_models/ \
+    --volume <your_dorado_models_path>:/dorado_models/ \
     ontresearch/dorado:<collect container_sha_basecalling> \
     dorado download --models-directory /dorado_models/
+{% else %}
+singularity run --bind <your_dorado_models_path> \
+    $NXF_SINGULARITY_CACHEDIR/ontresearch-dorado-<collect container_sha_basecalling>.img \
+    dorado download --models-directory <your_dorado_models_path>
+{% endif %}
 ```
 
 Then ensure that the `conf/custom.config` file has the correct path to the models:
 
 ```groovy
+{% if cookiecutter.with_docker %}
 env {
     DRD_MODELS_PATH = '/dorado_models'
 }
 
 docker {
-    runOptions = '--user $(id -u):$(id -g) --group-add 100 --volume /data/analyses/dorado_models/:/dorado_models'
+    runOptions = '--user $(id -u):$(id -g) --group-add 100 --volume <your_dorado_models_path>:/dorado_models'
 }
+{% else %}
+env {
+    DRD_MODELS_PATH = '<your_dorado_models_path>'
+}
+
+singularity {
+    runOptions = '--bind <your_dorado_models_path>'
+}
+{% endif %}
 ```
 
 > [!NOTE]
-> the models are downloaded to the `/data/analyses/dorado_models/` directory
+> the models are downloaded to the `<your_dorado_models_path>` directory
 
 ## Collect data
 
@@ -72,16 +93,33 @@ jq -r '.protocol_run_info' report_*.json | less
 
 And from `sample_sheet_*.csv` file.
 
+> [!WARNING]
+> ensure to remove to `BOM TEXT` from the csv file, is this CSV is generated on Windows:
+> for example:
+>
+> ```bash
+> file conf/samplesheet.csv
+> sed -i '1s/^\xEF\xBB\xBF//' conf/samplesheet.csv
+> file conf/samplesheet.csv
+> ```
+
 ## List avalable models
 
 To list the available models, run the following command:
 
 ```bash
+{% if cookiecutter.with_docker %}
 docker run -ti --rm --user $(id -u):$(id -g) --group-add 100 \
-    --volume /data/analyses/dorado_models/:/data/analyses/dorado_models/ \
+    --volume <your_dorado_models_path>:<your_dorado_models_path> \
     ontresearch/dorado:<collect container_sha_basecalling> \
     dorado download --list-structured | grep -v Running | \
     jq -r '.["dna_r10.4.1_e8.2_400bps_5khz"].simplex_models["dna_r10.4.1_e8.2_400bps_sup@v5.2.0"]'
+{% else %}
+singularity run --bind <your_dorado_models_path> \
+    $NXF_SINGULARITY_CACHEDIR/ontresearch-dorado-<collect container_sha_basecalling>.img \
+    dorado download --list-structured | grep -v Running | \
+    jq -r '.["dna_r10.4.1_e8.2_400bps_5khz"].simplex_models["dna_r10.4.1_e8.2_400bps_sup@v5.2.0"]'
+{% endif %}
 ```
 
 You will get an output like this:
@@ -100,7 +138,7 @@ different models with different context (https://github.com/bunop/wf-basecalling
 using:
 
 ```bash
-nextflow run bunop/wf-basecalling -r v1.5.8 -profile standard -resume \
+nextflow run bunop/wf-basecalling -r v1.5.8 -profile {% if cookiecutter.with_docker %}standard{% else %}singularity{% endif %} -resume \
     -c conf/custom.config -params-file conf/params.json
 ```
 
@@ -115,9 +153,15 @@ nextflow run bunop/wf-basecalling -r v1.5.8 -profile standard -resume \
 Calculate quality control metrics using `pycoQC`:
 
 ```bash
+{% if cookiecutter.with_docker %}
 docker run -ti --rm --user $(id -u):$(id -g) -v ${PWD}/output:/data \
     community.wave.seqera.io/library/pip_pycoqc_setuptools:31d5a8754dcc1b68 \
     pycoQC -f /data/SAMPLE.summary.tsv.gz -o /data/SAMPLE.summary.html
+{% else %}
+singularity run --bind ${PWD}/output:/data \
+    $NXF_SINGULARITY_CACHEDIR/pip_pycoqc_setuptools_31d5a8754dcc1b68.sif \
+    pycoQC -f /data/SAMPLE.summary.tsv.gz -o /data/SAMPLE.summary.html
+{% endif %}
 ```
 
 ### Join passed simplex and duplex reads
@@ -135,12 +179,21 @@ SAMPLE.pass.simplex.cram
 Let's join the `pass` reads into a single file:
 
 ```bash
+{% if cookiecutter.with_docker %}
 docker run -ti --rm --user $(id -u):$(id -g) -v ${PWD}/output:/data \
     quay.io/biocontainers/samtools:1.21--h50ea8bc_0 \
     samtools merge -o /data/SAMPLE.pass.all.cram /data/SAMPLE.pass.duplex.cram /data/SAMPLE.pass.simplex.cram
 docker run -ti --rm --user $(id -u):$(id -g) -v ${PWD}/output:/data \
     quay.io/biocontainers/samtools:1.21--h50ea8bc_0 \
     samtools index /data/SAMPLE.pass.all.cram
+{% else %}
+singularity run --bind ${PWD}/output:/data \
+    $NXF_SINGULARITY_CACHEDIR/depot.galaxyproject.org-singularity-samtools-1.21--h50ea8bc_0.img \
+    samtools merge -o /data/SAMPLE.pass.all.cram /data/SAMPLE.pass.duplex.cram /data/SAMPLE.pass.simplex.cram
+singularity run --bind ${PWD}/output:/data \
+    $NXF_SINGULARITY_CACHEDIR/depot.galaxyproject.org-singularity-samtools-1.21--h50ea8bc_0.img \
+    samtools index /data/SAMPLE.pass.all.cram
+{% endif %}
 ```
 
 ### Demultiplexing
@@ -148,27 +201,47 @@ docker run -ti --rm --user $(id -u):$(id -g) -v ${PWD}/output:/data \
 Do demultiplexing using `dorado`, this to produce both `fastq` files:
 
 ```bash
-mkdir demux-fastq
+mkdir -p demux
+{% if cookiecutter.with_docker %}
 docker run -ti --rm --user $(id -u):$(id -g) --group-add 100 --volume ${PWD}:/data \
     ontresearch/dorado:<collect container_sha_basecalling> \
-    dorado demux --kit-name XXX-XXXXX-XX --threads 2 --verbose --output-dir /data/demux-fastq \
-    --sample-sheet /data/conf/samplesheet.csv --emit-fastq /data/output/SAMPLE.pass.all.cram \
-    --emit-summary
+    dorado demux --kit-name XXX-XXXXX-XX --threads 2 --verbose
+    --output-dir /data/demux --emit-fastq --emit-summary \
+    --sample-sheet /data/conf/samplesheet.csv \
+    /data/output/SAMPLE.pass.all.cram
+{% else %}
+singularity run --bind ${PWD}:/data \
+    ${NXF_SINGULARITY_CACHEDIR}/ontresearch-dorado-<collect container_sha_basecalling>.img \
+    dorado demux --kit-name XXX-XXXXX-XX --threads 2 --verbose \
+    --output-dir /data/demux --emit-fastq --emit-summary \
+    --sample-sheet /data/conf/samplesheet.csv \
+    /data/output/SAMPLE.pass.all.cram
+{% endif %}
 ```
 
 pack demultiplexed reads:
 
 ```bash
-find demux-fastq/ -type f -iname "*.fastq" -exec gzip {} \;
+find demux/ -type f -iname "*.fastq" -exec gzip {} \;
 ```
 
 and for `ubam` files:
 
 ```bash
-mkdir demux-ubam
+mkdir -p demux
+{% if cookiecutter.with_docker %}
 docker run -ti --rm --user $(id -u):$(id -g) --group-add 100 --volume ${PWD}:/data \
     ontresearch/dorado:<collect container_sha_basecalling> \
-    dorado demux --kit-name XXX-XXXXX-XX --threads 2 --verbose --output-dir /data/demux-ubam \
-    --sample-sheet /data/conf/samplesheet.csv /data/output/SAMPLE.pass.all.cram \
-    --emit-summary
+    dorado demux --kit-name XXX-XXXXX-XX --threads 2 --verbose \
+    --output-dir /data/demux --emit-summary \
+    --sample-sheet /data/conf/samplesheet.csv \
+    /data/output/SAMPLE.pass.all.cram
+{% else %}
+singularity run --bind ${PWD}:/data \
+    ${NXF_SINGULARITY_CACHEDIR}/ontresearch-dorado-<collect container_sha_basecalling>.img \
+    dorado demux --kit-name XXX-XXXXX-XX --threads 2 --verbose \
+    --output-dir /data/demux --emit-summary \
+    --sample-sheet /data/conf/samplesheet.csv \
+    /data/output/SAMPLE.pass.all.cram
+{% endif %}
 ```
