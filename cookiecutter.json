@@ -1,7 +1,12 @@
 {
     "project_slug": "my_analysis",
     "include_data": true,
-    "project_type": ["unknown", "wf-basecalling", "nf-core/methylseq"],
+    "project_type": [
+        "unknown",
+        "wf-basecalling",
+        "nf-core/methylseq",
+        "nf-core/methylong"
+    ],
     "nextflow_as_a_job": false,
     "with_docker": false,
     "__prompts__": {

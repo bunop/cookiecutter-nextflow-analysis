@@ -70,6 +70,13 @@ json_params = {
         "save_trimmed": False
     },
 
+    "nf-core/methylong": {
+        "input": "<your input here>",
+        "pileup_method": "modkit",
+        "ont_aligner": "minimap2",
+        "bedgraph": True
+    },
+
     "unknown_params": {
         "input": "<your input here>",
         "outdir": "<your results folder>"
@@ -83,3 +90,10 @@ with open(params_path, "w") as f:
 
 print(f"Project type set to '{project_type}'. Configuration file 'conf/params.json' updated accordingly.")
 print("Please edit it further as needed.")
+
+# customize relying on project type
+if project_type == "nf-core/methylong":
+    shutil.copy(
+        os.path.join(os.path.dirname(__file__), "templates", "bedMethyl2cov.py"),
+        os.path.join(scripts_dir, "bedMethyl2cov.py")
+    )
