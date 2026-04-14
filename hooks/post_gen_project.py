@@ -94,6 +94,7 @@ print("Please edit it further as needed.")
 # customize relying on project type
 if project_type == "nf-core/methylong":
     shutil.copy(
-        os.path.join(os.path.dirname(__file__), "templates", "bedMethyl2cov.py"),
+        os.path.join("{{ cookiecutter._repo_dir }}", "templates", "bedMethyl2cov.py"),
         os.path.join(scripts_dir, "bedMethyl2cov.py")
     )
+    print("Custom script 'bedMethyl2cov.py' copied to scripts/ folder for nf-core/methylong project.")
