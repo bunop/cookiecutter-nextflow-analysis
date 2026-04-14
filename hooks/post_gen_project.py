@@ -46,49 +46,40 @@ if not nextflow_as_a_job:
     os.remove(os.path.join(scripts_dir, "launch.sh"))
 
 # some template configurations for different project types
-wf_basecalling_params = {
-    "basecaller_cfg": "dna_r10.4.1_e8.2_400bps_sup@v5.2.0",
-    "dorado_ext": "pod5",
-    "input": "data/pod5",
-    "duplex": True,
-    "remora_cfg": [
-        "dna_r10.4.1_e8.2_400bps_sup@v5.2.0_4mC_5mC@v1",
-        "dna_r10.4.1_e8.2_400bps_sup@v5.2.0_6mA@v1"
-    ],
-    "out_dir": "output"
+json_params = {
+    "wf-basecalling": {
+        "basecaller_cfg": "dna_r10.4.1_e8.2_400bps_sup@v5.2.0",
+        "dorado_ext": "pod5",
+        "input": "data/pod5",
+        "duplex": True,
+        "remora_cfg": [
+            "dna_r10.4.1_e8.2_400bps_sup@v5.2.0_4mC_5mC@v1",
+            "dna_r10.4.1_e8.2_400bps_sup@v5.2.0_6mA@v1"
+        ],
+        "out_dir": "output"
+    },
+
+    "nf-core/methylseq": {
+        "input": "<your input here>",
+        "fasta": "<genome fasta file>",
+        "aligner": "bismark",
+        "rrbs": True,
+        "outdir": "<your results folder>",
+        "save_reference": False,
+        "save_align_intermeds": False,
+        "save_trimmed": False
+    },
+
+    "unknown_params": {
+        "input": "<your input here>",
+        "outdir": "<your results folder>"
+    }
 }
 
-nf_core_methylseq_params = {
-    "input": "<your input here>",
-    "fasta": "<genome fasta file>",
-    "aligner": "bismark",
-    "rrbs": True,
-    "outdir": "<your results folder>",
-    "save_reference": False,
-    "save_align_intermeds": False,
-    "save_trimmed": False
-}
 
-unknown_params = {
-    "input": "<your input here>",
-    "outdir": "<your results folder>"
-}
-
-
-if project_type == "wf-basecalling":
-    with open(params_path, "w") as f:
-        json.dump(wf_basecalling_params, f, indent=4)
-        f.write('\n')
-
-elif project_type == "nf-core/methylseq":
-    with open(params_path, "w") as f:
-        json.dump(nf_core_methylseq_params, f, indent=4)
-        f.write('\n')
-
-else:
-    with open(params_path, "w") as f:
-        json.dump(unknown_params, f, indent=4)
-        f.write('\n')
+with open(params_path, "w") as f:
+    json.dump(json_params.get(project_type, json_params["unknown_params"]), f, indent=4)
+    f.write('\n')
 
 print(f"Project type set to '{project_type}'. Configuration file 'conf/params.json' updated accordingly.")
 print("Please edit it further as needed.")
