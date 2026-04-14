@@ -74,7 +74,15 @@ json_params = {
         "input": "<your input here>",
         "pileup_method": "modkit",
         "ont_aligner": "minimap2",
-        "bedgraph": True
+        "bedgraph": True,
+        "outdir": "<your results folder>"
+    },
+
+    "nf-core/rnaseq": {
+        "input": "<your input here>",
+        "fasta": "<genome fasta file>",
+        "gff": "<annotation gff file>",
+        "outdir": "<your results folder>"
     },
 
     "unknown_params": {
