@@ -72,8 +72,8 @@ json_params = {
 
     "nf-core/methylong": {
         "input": "<your input here>",
-        "pileup_method": "modkit",
         "ont_aligner": "minimap2",
+        "pileup_method": "modkit",
         "bedgraph": True,
         "outdir": "<your results folder>"
     },
