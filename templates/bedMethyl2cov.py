@@ -6,146 +6,87 @@ import pathlib
 import logging
 import argparse
 
-from dataclasses import dataclass, field
-
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-header = [
-    "chrom",
-    "chromStart",
-    "chromEnd",
-    "name",
-    "score",
-    "strand",
-    "thickStart",
-    "thickEnd",
-    "color",
-    "valid_coverage",
-    "percent_modified",
-    "count_modified",
-    "count_canonical",
-    "count_other_mod",
-    "count_delete",
-    "count_fail",
-    "count_diff",
-    "count_nocall"
-]
-
-@dataclass
-class bedMethylRecord:
-    chrom: str
-    chromStart: int
-    chromEnd: int
-    name: str
-    score: int
-    strand: str
-    thickStart: int
-    thickEnd: int
-    color: str
-    valid_coverage: int
-    percent_modified: float
-    count_modified: int
-    count_canonical: int
-    count_other_mod: int
-    count_delete: int
-    count_fail: int
-    count_diff: int
-    count_nocall: int
-    custom_score: int = field(init=False, default=0)
-
-    def __post_init__(self):
-        self.chromStart = int(self.chromStart)
-        self.chromEnd = int(self.chromEnd)
-        self.score = int(self.score)
-        self.thickStart = int(self.thickStart)
-        self.thickEnd = int(self.thickEnd)
-        self.valid_coverage = int(self.valid_coverage)
-        self.percent_modified = float(self.percent_modified)
-        self.count_modified = int(self.count_modified)
-        self.count_canonical = int(self.count_canonical)
-        self.count_other_mod = int(self.count_other_mod)
-        self.count_delete = int(self.count_delete)
-        self.count_fail = int(self.count_fail)
-        self.count_diff = int(self.count_diff)
-        self.count_nocall = int(self.count_nocall)
-
-        # custom fields
-        self.custom_score = self.count_modified + self.count_canonical
-
-    def validate(self) -> list[str]:
-        errors = []
-
-        if self.strand not in ["+", "-", '.']:
-            errors.append(f"Invalid strand '{self.strand}'")
-
-        return errors
-
-    def to_cov(self) -> list:
-        """
-        Convert the bedMethyl record to a cov record.
-        """
-
-        # consider this record: bedMethylRecord(chrom='NC_037328.1', chromStart=35464,
-        # chromEnd=35465, name='h', score=9, strand='-', thickStart=35464, thickEnd=35465,
-        # color='255,0,0', valid_coverage=9, percent_modified=11.11, count_modified=1,
-        # count_canonical=0, count_other_mod=8, count_delete=0, count_fail=0, count_diff=2,
-        # count_nocall=0): modkit expect to have 8 different modified call from name,
-        # and this percent modified is calculated as count_modified / valid_coverage * 100.
-        # I cannot handle count_other_mod, count_delete, count_fail, count_diff, count_nocall
-        # so I will recalculate percent_modified as
-        # count_modified / (count_canonical + count_modified) * 100
-        denominator = self.count_canonical + self.count_modified
-        if denominator == 0:
-            percent_modified = 0.0
-        else:
-            percent_modified = round((self.count_modified / denominator) * 100, 2)
-
-        if percent_modified != self.percent_modified:
-            logger.debug(
-                f"Percent modified mismatch: modkit:{self.percent_modified} vs self:"
-                f"{percent_modified} for {self.name} at {self.chrom}:{self.chromStart}-"
-                f"{self.chromEnd}"
-            )
-
-        return [
-            self.chrom,
-            self.chromStart + 1,  # Convert to 1-based index
-            self.chromEnd,
-            percent_modified,
-            self.count_modified,
-            self.count_canonical
-        ]
+IDX_CHROM = 0
+IDX_CHROM_START = 1
+IDX_CHROM_END = 2
+IDX_NAME = 3
+IDX_SCORE = 4
+IDX_STRAND = 5
+IDX_PERCENT_MODIFIED = 10
+IDX_COUNT_MODIFIED = 11
+IDX_COUNT_CANONICAL = 12
 
 
-def open_bedMethyl_file(filename: pathlib.PosixPath, mode='rt'):
+def parse_bedmethyl_line(line: str, line_number: int, filename: pathlib.Path):
+    fields = line.rstrip("\n").split("\t")
+
+    if len(fields) < 18:
+        raise ValueError(
+            f"Record {line_number} in {filename} has {len(fields)} fields, expected >= 18"
+        )
+
+    strand = fields[IDX_STRAND]
+    if strand not in ["+", "-", "."]:
+        raise ValueError(
+            f"Record {line_number} in {filename} is invalid: Invalid strand '{strand}'"
+        )
+
+    chrom = fields[IDX_CHROM]
+    chrom_start = int(fields[IDX_CHROM_START])
+    chrom_end = int(fields[IDX_CHROM_END])
+    name = fields[IDX_NAME]
+    score = int(fields[IDX_SCORE])
+    input_percent_modified = float(fields[IDX_PERCENT_MODIFIED])
+    count_modified = int(fields[IDX_COUNT_MODIFIED])
+    count_canonical = int(fields[IDX_COUNT_CANONICAL])
+
+    custom_score = count_modified + count_canonical
+    denominator = custom_score
+
+    if denominator == 0:
+        percent_modified = 0.0
+    else:
+        percent_modified = round((count_modified / denominator) * 100, 2)
+
+    if percent_modified != input_percent_modified:
+        logger.debug(
+            f"Percent modified mismatch: modkit:{input_percent_modified} vs self:"
+            f"{percent_modified} for {name} at {chrom}:{chrom_start}-{chrom_end}"
+        )
+
+    return (
+        name,
+        score,
+        custom_score,
+        chrom,
+        chrom_start + 1,
+        chrom_end,
+        percent_modified,
+        count_modified,
+        count_canonical,
+    )
+
+
+def open_bedMethyl_file(filename: pathlib.Path, mode='rt'):
     """
     Open a BED file (possibly gzipped) for reading.
     """
 
-    if filename.suffix == '.gz':
-        handle = gzip.open(filename, mode)
+    opener = gzip.open if filename.suffix == '.gz' else open
+    processed = 0
 
-    else:
-        handle = open(filename, mode)
+    with opener(filename, mode) as handle:
+        for i, line in enumerate(handle, start=1):
+            if i % 100000 == 0:
+                logger.info(f"Processing record {i} in {filename}")
 
-    reader = csv.DictReader(handle, fieldnames=header, delimiter='\t')
+            yield parse_bedmethyl_line(line, i, filename)
+            processed = i
 
-    for i, row in enumerate(reader):
-        if (i+1) % 100000 == 0:
-            logger.info(f"Processing record {i+1} in {filename}")
-
-        record = bedMethylRecord(**row)
-
-        record_errors = record.validate()
-        if record_errors:
-            raise ValueError(f"Record {i} in {filename} is invalid: {record_errors}")
-
-        yield record
-
-    logger.info(f"Processed {i+1} records in {filename}")
-
-    handle.close()
+    logger.info(f"Processed {processed} records in {filename}")
 
 
 if __name__ == "__main__":
@@ -197,20 +138,36 @@ if __name__ == "__main__":
         writers = {}
 
         for record in open_bedMethyl_file(bed_file):
-            if args.score and record.score < args.score:
+            (
+                name,
+                score,
+                custom_score,
+                chrom,
+                chrom_start_1_based,
+                chrom_end,
+                percent_modified,
+                count_modified,
+                count_canonical,
+            ) = record
+
+            if args.score and score < args.score:
                 continue
 
-            if args.custom_score and record.custom_score < args.custom_score:
+            if args.custom_score and custom_score < args.custom_score:
                 continue
 
-            if record.name not in handles:
-                output_file = output_prefix.with_suffix(f".{record.name}.cov.gz")
+            if name not in handles:
+                output_file = output_prefix.with_suffix(f".{name}.cov.gz")
                 logger.info(f"Creating output file: {output_file}")
-                handles[record.name] = gzip.open(output_file, mode='wt')
-                writers[record.name] = csv.writer(handles[record.name], delimiter='\t')
+                out_handle = gzip.open(output_file, mode='wt')
+                handles[name] = out_handle
+                writers[name] = out_handle.write
 
-            writer = writers[record.name]
-            writer.writerow(record.to_cov())
+            write_line = writers[name]
+            write_line(
+                f"{chrom}\t{chrom_start_1_based}\t{chrom_end}\t{percent_modified}\t"
+                f"{count_modified}\t{count_canonical}\n"
+            )
 
         for handle in handles.values():
             handle.close()
