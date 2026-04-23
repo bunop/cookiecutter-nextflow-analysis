@@ -6,6 +6,8 @@ sample,fastq_1,fastq_2,genome
 group,sample,path,ref,method
 {% elif cookiecutter.project_type == "nf-core/rnaseq" -%}
 sample,fastq_1,fastq_2,strandedness
+{% elif cookiecutter.project_type == "nf-core/smrnaseq" -%}
+sample,fastq_1
 {% else -%}
 sample,fastq_1,fastq_2
 {% endif -%}

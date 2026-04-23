@@ -6,7 +6,8 @@
         "wf-basecalling",
         "nf-core/methylseq",
         "nf-core/methylong",
-        "nf-core/rnaseq"
+        "nf-core/rnaseq",
+        "nf-core/smrnaseq"
     ],
     "nextflow_as_a_job": false,
     "with_docker": false,

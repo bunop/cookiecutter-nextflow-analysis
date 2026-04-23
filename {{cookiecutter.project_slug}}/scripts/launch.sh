@@ -16,4 +16,6 @@ export CUSTOM_CONFIG_BASE=${WORK}/nf-configs
 {% include "methylong.sh" %}
 {% elif cookiecutter.project_type == "nf-core/rnaseq" %}
 {% include "rnaseq.sh" %}
+{% elif cookiecutter.project_type == "nf-core/smrnaseq" %}
+{% include "smrnaseq.sh" %}
 {% endif %}
