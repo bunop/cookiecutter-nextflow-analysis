@@ -88,7 +88,6 @@ json_params = {
     "nf-core/smrnaseq": {
         "input": "<your input here>",
         "fasta": "<genome fasta file>",
-        "bowtie_index": "<bowtie index folder>",
         "outdir": "<your results folder>",
         "mirtrace_species": "<mirtrace species>",
         "mirna_gtf": "<mirna gtf/gff file>",
