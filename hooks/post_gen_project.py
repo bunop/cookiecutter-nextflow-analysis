@@ -110,7 +110,14 @@ print(f"Project type set to '{project_type}'. Configuration file 'conf/params.js
 print("Please edit it further as needed.")
 
 # customize relying on project type
-if project_type == "nf-core/methylong":
+if project_type == "wf-basecalling":
+    shutil.copy(
+        os.path.join("{{ cookiecutter._repo_dir }}", "templates", "parse_ont_report.py"),
+        os.path.join(scripts_dir, "parse_ont_report.py")
+    )
+    print("Custom script 'parse_ont_report.py' copied to scripts/ folder for wf-basecalling project.")
+
+elif project_type == "nf-core/methylong":
     shutil.copy(
         os.path.join("{{ cookiecutter._repo_dir }}", "templates", "bedMethyl2cov.py"),
         os.path.join(scripts_dir, "bedMethyl2cov.py")
