@@ -6,6 +6,7 @@ data*
 results/
 results*
 output/
+output*
 demux-*/
 .DS_Store
 testing/
