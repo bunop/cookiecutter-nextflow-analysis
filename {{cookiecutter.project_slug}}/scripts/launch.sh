@@ -10,7 +10,9 @@
 
 # set the path of institution-specific configuration files
 export CUSTOM_CONFIG_BASE=${WORK}/nf-configs
-{% if cookiecutter.project_type == "nf-core/methylseq" %}
+{% if cookiecutter.project_type == "wf-basecalling" %}
+{% include "wf-basecalling.sh" %}
+{% elif cookiecutter.project_type == "nf-core/methylseq" %}
 {% include "methylseq.sh" %}
 {% elif cookiecutter.project_type == "nf-core/methylong" %}
 {% include "methylong.sh" %}
