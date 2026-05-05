@@ -3,7 +3,7 @@
 
 Open [base.config](https://github.com/bunop/wf-basecalling/blob/multiple_calling/base.config)
 in [wf-basecalling](https://github.com/bunop/wf-basecalling/tree/multiple_calling)
-custom github repository (which support multiple models with basecalling), and
+custom github repository (which supports multiple models with basecalling), and
 search for `container_sha_basecalling` (should be at the beginning of file):
 
 ```groovy
@@ -77,7 +77,7 @@ find <pod 5 folder> -type f -name "*.pod5" -exec ln -s {} . \;
 
 ## Creating samplesheet
 
-Create `conf/samplesheet.csv` like this::
+Create `conf/samplesheet.csv` like this:
 
 ```csv
 experiment_id,kit,flow_cell_id,barcode,alias
@@ -98,7 +98,7 @@ And from `sample_sheet_*.csv` file.
 > from the JSON report files.
 >
 > [!WARNING]
-> ensure to remove to `BOM TEXT` from the csv file, is this CSV is generated on Windows:
+> ensure to remove the `BOM TEXT` from the csv file, if this CSV is generated on Windows:
 > for example:
 >
 > ```bash
@@ -107,7 +107,7 @@ And from `sample_sheet_*.csv` file.
 > file conf/samplesheet.csv
 > ```
 
-## List avalable models
+## List available models
 
 To list the available models, run the following command:
 
@@ -132,27 +132,27 @@ You will get an output like this:
 < paste available dorado models >
 ```
 
-You will need specify models belonging to different context (ex: `C` and `A`;
+You will need to specify models belonging to different context (ex: `C` and `A`;
 `CG` and `C` are considered same context)
 
 ## Calling wf-basecalling pipeline
 
-Called the latest `wf-basecalling` pipeline (`v1.5.8`) customize to support
+Call the custom `wf-basecalling` pipeline (`v1.5.9-mc`) customized to support
 different models with different context (https://github.com/bunop/wf-basecalling/tree/multiple_calling)
 using:
 
 ```bash
-nextflow run bunop/wf-basecalling -r v1.5.8 -profile {% if cookiecutter.with_docker %}standard{% else %}singularity{% endif %} -resume \
+nextflow run bunop/wf-basecalling -r v1.5.9-mc -profile {% if cookiecutter.with_docker %}standard{% else %}singularity{% endif %} -resume \
     -c conf/custom.config -params-file conf/params.json
 ```
 
 > [!NOTE]
-> is not possible to call `--duplex=true` and `--barcode_kit=XXX-XXXXX-XX`
+> It is not possible to call `--duplex=true` and `--barcode_kit=XXX-XXXXX-XX`
 > at the same time, *demultiplexing* should be done after basecalling.
 
 ## Post processing
 
-### calling PyCOQC
+### Calling pycoQC
 
 Calculate quality control metrics using `pycoQC`:
 
@@ -202,7 +202,7 @@ singularity run --bind ${PWD}/output \
 
 ### Demultiplexing
 
-Do demultiplexing using `dorado`, this to produce both `fastq` files:
+Do demultiplexing using `dorado` to produce `fastq` files:
 
 ```bash
 mkdir -p demux
