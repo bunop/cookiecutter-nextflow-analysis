@@ -158,13 +158,13 @@ Calculate quality control metrics using `pycoQC`:
 
 ```bash
 {%- if cookiecutter.with_docker %}
-docker run -ti --rm --user $(id -u):$(id -g) -v ${PWD}/output:${PWD}/output \
+docker run -ti --rm --user $(id -u):$(id -g) -v ${PWD}/<pipeline results folder>:${PWD}/<pipeline results folder> \
     community.wave.seqera.io/library/pip_pycoqc_setuptools:31d5a8754dcc1b68 \
-    pycoQC -f ${PWD}/output/SAMPLE.summary.tsv.gz -o ${PWD}/output/SAMPLE.summary.html
+    pycoQC -f ${PWD}/<pipeline results folder>/SAMPLE.summary.tsv.gz -o ${PWD}/<pipeline results folder>/SAMPLE.summary.html
 {%- else %}
-singularity run --bind ${PWD}/output \
+singularity run --bind ${PWD}/<pipeline results folder> \
     $NXF_SINGULARITY_CACHEDIR/pip_pycoqc_setuptools_31d5a8754dcc1b68.sif \
-    pycoQC -f ${PWD}/output/SAMPLE.summary.tsv.gz -o ${PWD}/output/SAMPLE.summary.html
+    pycoQC -f ${PWD}/<pipeline results folder>/SAMPLE.summary.tsv.gz -o ${PWD}/<pipeline results folder>/SAMPLE.summary.html
 {%- endif %}
 ```
 
@@ -184,19 +184,19 @@ Let's join the `pass` reads into a single file:
 
 ```bash
 {%- if cookiecutter.with_docker %}
-docker run -ti --rm --user $(id -u):$(id -g) -v ${PWD}/output:${PWD}/output \
+docker run -ti --rm --user $(id -u):$(id -g) -v ${PWD}/<pipeline results folder>:${PWD}/<pipeline results folder> \
     quay.io/biocontainers/samtools:1.21--h50ea8bc_0 \
-    samtools merge -o ${PWD}/output/SAMPLE.pass.all.cram ${PWD}/output/SAMPLE.pass.duplex.cram ${PWD}/output/SAMPLE.pass.simplex.cram
-docker run -ti --rm --user $(id -u):$(id -g) -v ${PWD}/output:${PWD}/output \
+    samtools merge -o ${PWD}/<pipeline results folder>/SAMPLE.pass.all.cram ${PWD}/<pipeline results folder>/SAMPLE.pass.duplex.cram ${PWD}/<pipeline results folder>/SAMPLE.pass.simplex.cram
+docker run -ti --rm --user $(id -u):$(id -g) -v ${PWD}/<pipeline results folder>:${PWD}/<pipeline results folder> \
     quay.io/biocontainers/samtools:1.21--h50ea8bc_0 \
-    samtools index ${PWD}/output/SAMPLE.pass.all.cram
+    samtools index ${PWD}/<pipeline results folder>/SAMPLE.pass.all.cram
 {%- else %}
-singularity run --bind ${PWD}/output \
+singularity run --bind ${PWD}/<pipeline results folder> \
     $NXF_SINGULARITY_CACHEDIR/depot.galaxyproject.org-singularity-samtools-1.21--h50ea8bc_0.img \
-    samtools merge -o ${PWD}/output/SAMPLE.pass.all.cram ${PWD}/output/SAMPLE.pass.duplex.cram ${PWD}/output/SAMPLE.pass.simplex.cram
-singularity run --bind ${PWD}/output \
+    samtools merge -o ${PWD}/<pipeline results folder>/SAMPLE.pass.all.cram ${PWD}/<pipeline results folder>/SAMPLE.pass.duplex.cram ${PWD}/<pipeline results folder>/SAMPLE.pass.simplex.cram
+singularity run --bind ${PWD}/<pipeline results folder> \
     $NXF_SINGULARITY_CACHEDIR/depot.galaxyproject.org-singularity-samtools-1.21--h50ea8bc_0.img \
-    samtools index ${PWD}/output/SAMPLE.pass.all.cram
+    samtools index ${PWD}/<pipeline results folder>/SAMPLE.pass.all.cram
 {%- endif %}
 ```
 
@@ -212,14 +212,14 @@ docker run -ti --rm --user $(id -u):$(id -g) --group-add 100 --volume ${PWD}:${P
     dorado demux --kit-name XXX-XXXXX-XX --threads 2 --verbose \
     --output-dir ${PWD}/demux --emit-fastq --emit-summary \
     --sample-sheet ${PWD}/conf/samplesheet.csv \
-    ${PWD}/output/SAMPLE.pass.all.cram
+    ${PWD}/<pipeline results folder>/SAMPLE.pass.all.cram
 {%- else %}
 singularity run --bind ${PWD} \
     ${NXF_SINGULARITY_CACHEDIR}/ontresearch-dorado-<collect container_sha_basecalling>.img \
     dorado demux --kit-name XXX-XXXXX-XX --threads 2 --verbose \
     --output-dir ${PWD}/demux --emit-fastq --emit-summary \
     --sample-sheet ${PWD}/conf/samplesheet.csv \
-    ${PWD}/output/SAMPLE.pass.all.cram
+    ${PWD}/<pipeline results folder>/SAMPLE.pass.all.cram
 {%- endif %}
 ```
 
@@ -239,13 +239,13 @@ docker run -ti --rm --user $(id -u):$(id -g) --group-add 100 --volume ${PWD}:${P
     dorado demux --kit-name XXX-XXXXX-XX --threads 2 --verbose \
     --output-dir ${PWD}/demux --emit-summary \
     --sample-sheet ${PWD}/conf/samplesheet.csv \
-    ${PWD}/output/SAMPLE.pass.all.cram
+    ${PWD}/<pipeline results folder>/SAMPLE.pass.all.cram
 {%- else %}
 singularity run --bind ${PWD} \
     ${NXF_SINGULARITY_CACHEDIR}/ontresearch-dorado-<collect container_sha_basecalling>.img \
     dorado demux --kit-name XXX-XXXXX-XX --threads 2 --verbose \
     --output-dir ${PWD}/demux --emit-summary \
     --sample-sheet ${PWD}/conf/samplesheet.csv \
-    ${PWD}/output/SAMPLE.pass.all.cram
+    ${PWD}/<pipeline results folder>/SAMPLE.pass.all.cram
 {%- endif %}
 ```
