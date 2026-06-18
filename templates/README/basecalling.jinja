@@ -4,7 +4,7 @@
 Open [base.config](https://github.com/bunop/wf-basecalling/blob/multiple_calling/base.config)
 in [wf-basecalling](https://github.com/bunop/wf-basecalling/tree/multiple_calling)
 custom github repository (which supports multiple models with basecalling), and
-search for `container_sha_basecalling` (should be at the beginning of file):
+search for `container_sha_basecalling` (should be at the beginning of the file):
 
 ```groovy
 <paste params directive here>
@@ -132,13 +132,13 @@ You will get an output like this:
 < paste available dorado models >
 ```
 
-You will need to specify models belonging to different context (ex: `C` and `A`;
-`CG` and `C` are considered same context)
+You will need to specify models belonging to different contexts (ex: `C` and `A`;
+`CG` and `C` are considered the same context)
 
 ## Calling wf-basecalling pipeline
 
 Call the custom `wf-basecalling` pipeline (`v1.5.9-mc`) customized to support
-different models with different context (https://github.com/bunop/wf-basecalling/tree/multiple_calling)
+different models with different contexts (https://github.com/bunop/wf-basecalling/tree/multiple_calling)
 using:
 
 ```bash
@@ -223,7 +223,7 @@ singularity run --bind ${PWD} \
 {%- endif %}
 ```
 
-pack demultiplexed reads:
+Pack demultiplexed reads:
 
 ```bash
 find demux/ -type f -iname "*.fastq" -exec gzip {} \;
