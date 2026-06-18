@@ -30,9 +30,9 @@ To update the models, run the following command (again, mind the sha):
 mkdir -p <your_dorado_models_path>
 {%- if cookiecutter.with_docker %}
 docker run -ti --rm --user $(id -u):$(id -g) --group-add 100 \
-    --volume <your_dorado_models_path>:/dorado_models/ \
+    --volume <your_dorado_models_path>:<your_dorado_models_path> \
     ontresearch/dorado:<collect container_sha_basecalling> \
-    dorado download --models-directory /dorado_models/
+    dorado download --models-directory <your_dorado_models_path>
 {%- else %}
 singularity run --bind <your_dorado_models_path> \
     $NXF_SINGULARITY_CACHEDIR/ontresearch-dorado-<collect container_sha_basecalling>.img \
@@ -45,11 +45,11 @@ Then ensure that the `conf/custom.config` file has the correct path to the model
 ```groovy
 {%- if cookiecutter.with_docker %}
 env {
-    DRD_MODELS_PATH = '/dorado_models'
+    DRD_MODELS_PATH = '<your_dorado_models_path>'
 }
 
 docker {
-    runOptions = '--user $(id -u):$(id -g) --group-add 100 --volume <your_dorado_models_path>:/dorado_models'
+    runOptions = '--user $(id -u):$(id -g) --group-add 100 --volume <your_dorado_models_path>:<your_dorado_models_path>'
 }
 {%- else %}
 env {
