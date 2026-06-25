@@ -56,7 +56,7 @@ json_params = {
             "dna_r10.4.1_e8.2_400bps_sup@v5.2.0_4mC_5mC@v1",
             "dna_r10.4.1_e8.2_400bps_sup@v5.2.0_6mA@v1"
         ],
-        "out_dir": "output"
+        "out_dir": "<pipeline_results_folder>"
     },
 
     "nf-core/methylseq": {
