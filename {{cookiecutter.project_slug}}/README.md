@@ -1,7 +1,8 @@
+
 # {{ cookiecutter.project_slug }}
 
-{% if cookiecutter.project_type == "wf-basecalling" %}
+{% if cookiecutter.project_type == "wf-basecalling" -%}
 {% include "README/basecalling.jinja" %}
-{% else %}
+{%- else -%}
 Few lines about the project.
 {% endif %}

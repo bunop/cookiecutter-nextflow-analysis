@@ -7,7 +7,7 @@ results/
 results*
 output/
 output*
-demux-*/
+demux*/
 .DS_Store
 testing/
 testing*
