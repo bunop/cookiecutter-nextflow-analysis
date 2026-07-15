@@ -265,7 +265,7 @@ singularity run --bind ${PWD} \
 Pack demultiplexed reads:
 
 ```bash
-find demux/ -type f -iname "*.fastq" -exec gzip {} \;
+find demux/ -type f -iname "*.fastq" | parallel -j4 gzip
 ```
 
 and for `ubam` files:
@@ -287,4 +287,10 @@ singularity run --bind ${PWD} \
     --sample-sheet ${PWD}/conf/samplesheet.csv \
     ${PWD}/<pipeline_results_folder>/SAMPLE.pass.all.cram
 {%- endif %}
+```
+
+Remember also to pack `sequencing_summary.txt` file:
+
+```bash
+gzip demux/sequencing_summary.txt
 ```
