@@ -25,6 +25,7 @@ cookiecutter https://github.com/bunop/cookiecutter-nextflow-analysis.git
 
 ```
 {{cookiecutter.project_slug}}/
+├── .claude/skills   # Claude Code skills (e.g. /split-samplesheet)
 ├── README.md
 ├── conf
 ├── data
@@ -34,6 +35,12 @@ cookiecutter https://github.com/bunop/cookiecutter-nextflow-analysis.git
 ## Usage
 
 Customize `cookiecutter.json` with your project parameters, then generate a new project structure.
+
+## Claude Code skills
+
+Generated projects ship with [Claude Code](https://claude.com/claude-code) skills in `.claude/skills/`:
+
+- `/split-samplesheet`: computes `seqkit stats`, builds the samplesheet, splits it into size-balanced batches, creates a test samplesheet/params, documents the steps in the README and commits.
 
 ## Contributing
 
