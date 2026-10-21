@@ -17,31 +17,33 @@ will be one samplesheet (and params) per batch.
 ## 0. Survey
 
 - Read `README.md`, `conf/`, `scripts/`, `git status`, and look for existing
-  `seq_stats.*` / `conf/samplesheet_*.csv` (skip steps already done, but say so).
+  `conf/seq_stats.*` / `conf/samplesheet_*.csv` (skip steps already done, but say so).
 - Find the raw data: `data/` (often a symlink or ignored by git) or a path
   given by the user. Look at a few file names (`find <path> -name '*.f*q.gz' | head`)
   to infer R1/R2 naming and whether samples are one per directory.
 - Collect what is missing, proposing these defaults:
   - number of batches: **4** (rule of thumb: ~250 GB of fastq per batch,
     check with `du -shL <data path>`);
-  - seqkit from the Singularity cache `/home/core/nxf_singularity_cache/`
-    (`ls /home/core/nxf_singularity_cache/ | grep -i seqkit`) or from conda;
-  - run seqkit stats on `node2` to bypass the NFS network switch (ask how:
-    `srun -w node2 -c 4 ...` or `ssh node2`), or locally;
-  - test params target: AWS (`conf/params-test-aws.json`).
+  - how to run seqkit: already in `PATH`, from the Singularity cache
+    `$NXF_SINGULARITY_CACHEDIR` (`ls $NXF_SINGULARITY_CACHEDIR | grep -i seqkit`)
+    or from conda.
+
+All commands run from the project root; data is in `data/` and generated files
+go in `conf/`. Paths are kept **relative** to the project root (Nextflow stages
+the files when running remotely).
 
 ## 1. Statistics
 
 seqkit stats is disk bound and does not scale with threads: keep `-j 4`.
-Use absolute paths, so stats can be joined to the samplesheet:
+Use the same (relative) paths as the samplesheet, so stats can be joined to it
+(`-L` follows `data/` if it is a symlink):
 
 ```bash
-find $(realpath <data path>) -name '*.fastq.gz' | sort | \
-    xargs seqkit stats -j 4 -T > seq_stats.tsv
+find -L <data path> -name '*.fastq.gz' | sort | \
+    xargs seqkit stats -j 4 -T > conf/seq_stats.txt
 ```
 
-(prefix `seqkit` with `singularity exec <image.img>` and/or the node command
-chosen above).
+(prefix `seqkit` with `singularity exec <image.img>` if needed).
 It may take hours: run it in background and check the output is complete
 (one row per fastq file) before moving on.
 
@@ -62,14 +64,15 @@ The output has `sample,fastq_1,fastq_2` columns: adapt it to the header
 expected by `{{ cookiecutter.project_type }}` (see `conf/samplesheet.csv`).
 {%- else -%}
 ```bash
-python3 scripts/make_samplesheet.py --path <data path> --format <sarek|nf-resequencing-mem|rnaseq> > conf/samplesheet_all.csv
+python3 scripts/make_samplesheet.py --path <data path> > conf/samplesheet_all.csv
 ```
 
-Pick the format matching the header in `conf/samplesheet.csv`.
+This uses the script's default format: check its header against
+`conf/samplesheet.csv` and, if it differs, pick another `--format`
+(see `--help`).
 {%- endif %}
 
-- Pass `--path $(realpath <data path>)` so the samplesheet has absolute paths
-  (for AWS runs, paths will need to point to S3: ask the user).
+- Pass `--path <data path>` as relative path, from the project root.
 - Tune `--prefix_pattern`, `--suffix_pattern`, `--r2_suffix`,
   `--no-samples_as_dirs`, `--exclude_pattern`, `--aliases` to the file names.
 - If the options are not enough, edit the script: it is tracked in git, so
@@ -81,7 +84,7 @@ Pick the format matching the header in `conf/samplesheet.csv`.
 
 ```bash
 python3 scripts/divide_samples_in_batches.py \
-    --samplesheet conf/samplesheet_all.csv --stats seq_stats.tsv \
+    --samplesheet conf/samplesheet_all.csv --stats conf/seq_stats.txt \
     --num_batches 4 -o conf/samplesheet
 ```
 
@@ -94,12 +97,12 @@ otherwise investigate. Report the per-batch summary to the user.
 ## 4. Test files
 
 From one batch take the **first 3 and the last 3 samples** (biggest and
-smallest: verify the ordering against `seq_stats.tsv`, don't trust it blindly;
+smallest: verify the ordering against `conf/seq_stats.txt`, don't trust it blindly;
 if the batch has 6 samples or fewer, tell the user the test set is the whole
 batch) and write, keeping the header and all rows (lanes) of those samples:
 
 - `conf/samplesheet-test.csv`
-- `conf/params-test-aws.json`: a copy of `conf/params.json` with `input`
+- `conf/params-test.json`: a copy of `conf/params.json` with `input`
   pointing to `conf/samplesheet-test.csv` and a test output folder; ask the
   user for values still left as `<placeholder>` (e.g. S3 paths).
 
@@ -117,6 +120,6 @@ the scripts, number of samples and size of each batch.
 - Remove the template files no longer needed (e.g. `conf/samplesheet.csv` if
   only the per-batch files are used, `.gitkeep` files in non-empty folders,
   placeholder text in the README): list them and ask before deleting.
-- `seq_stats.tsv` is small: commit it.
+- `conf/seq_stats.txt` is small: commit it.
 - Show `git status` and the commit message, ask for confirmation, then commit
   everything. The working tree must be clean at the end (`git status`).
