@@ -7,7 +7,7 @@ description: Write (or fix) a SLURM job script in scripts/ to run a long command
 
 Goal: a script `scripts/<name>.sh`, tracked in git, that runs a command of this
 project on the right resources, plus a README note on how it was launched.
-**Never launch anything without an explicit confirmation from the user.**
+Where commands may run and the confirmation rule: see `CLAUDE.md`.
 
 Work step by step. Start from what already exists; **ask the user only for
 what is missing** (use one AskUserQuestion with all the open points, not many).
@@ -18,14 +18,11 @@ what is missing** (use one AskUserQuestion with all the open points, not many).
 command -v sbatch; echo "SLURM_JOB_ID=${SLURM_JOB_ID:-}"; echo "PRJ_ACCOUNT=${PRJ_ACCOUNT:-}"; ls ~/.ch_acc.def
 ```
 
-- **CINECA**: `PRJ_ACCOUNT` is defined or `~/.ch_acc.def` exists. Commands
-  on login nodes are killed after 10 minutes of CPU time: everything heavy
-  (nextflow, seqkit, ...) **must** run as a job. Account, partition and QoS are required.
-- **CNR**: `sbatch` exists but no CINECA account. No account/quota needed, the
-  default partition is the long one (no time limit, don't specify it); there is
-  also a test partition with 4h walltime (`sinfo -s` for its name). Nextflow
-  runs on the login node; a job is useful for long commands but not mandatory.
-- **Local / test**: no `sbatch`: run the script with `bash` in background.
+- **CINECA**: account, partition and QoS are required.
+- **CNR**: no account/quota needed, the default partition is the long one (no
+  time limit, don't specify it); there is also a test partition with 4h
+  walltime (`sinfo -s` for its name).
+- **Local / test**: run the script with `bash` in background.
 - `SLURM_JOB_ID` set: we are already inside an allocation, run directly.
 
 Also look at `scripts/*.sh`, `README.md` and `git status`: reuse what exists.
