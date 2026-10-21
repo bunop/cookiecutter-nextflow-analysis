@@ -1,0 +1,27 @@
+# CLAUDE.md
+
+Nextflow analysis project (`{{ cookiecutter.project_type }}`). Run every command
+from the project root and keep paths relative to it: raw data in `data/`
+(often a symlink), configuration in `conf/`, scripts in `scripts/`, job logs in `logs/`.
+
+## Where heavy commands run
+
+- **CINECA** (`$PRJ_ACCOUNT` defined or `~/.ch_acc.def` exists): login nodes
+  kill any command after 10 minutes of CPU time. Nextflow, seqkit, helper
+  scripts and long `du`/`find` on big folders must run as SLURM jobs: use `/slurm-job`.
+- **CNR** (`sbatch` available, no CINECA account): Nextflow runs on the login
+  node; long commands can run in background or as a job (`/slurm-job`).
+- **Local**: run long commands in background.
+
+Never launch a job, a pipeline or a long command without first summarizing
+what will run and getting an explicit confirmation.
+
+## Folder sizes
+
+`du` time grows with the number of files, not the size: seconds for `data/`,
+possibly tens of minutes for `work/` or `results/`.
+
+- Always follow symlinks (`du -shL`): Nextflow `results/` often only holds links into `work/`.
+- Run it in background and save the output, e.g.
+  `du -hL --max-depth=1 results/ > logs/du_results.txt`; reuse that file if recent.
+- On CINECA, `du` on `work/` or `results/` goes in a job (`/slurm-job`).

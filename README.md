@@ -26,6 +26,7 @@ cookiecutter https://github.com/bunop/cookiecutter-nextflow-analysis.git
 ```
 {{cookiecutter.project_slug}}/
 ├── .claude/skills   # Claude Code skills (e.g. /split-samplesheet, /slurm-job)
+├── CLAUDE.md        # Claude Code rules: where heavy commands run (CINECA/CNR/local), du
 ├── README.md
 ├── conf
 ├── data
