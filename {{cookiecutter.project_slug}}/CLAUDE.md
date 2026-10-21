@@ -21,7 +21,9 @@ what will run and getting an explicit confirmation.
 `du` time grows with the number of files, not the size: seconds for `data/`,
 possibly tens of minutes for `work/` or `results/`.
 
-- Always follow symlinks (`du -shL`): Nextflow `results/` often only holds links into `work/`.
+- Follow symlinks (`du -shL`) for `data/` (often a symlink) and `results/`
+  (often only links into `work/`). Not for `work/`: task folders link their
+  inputs, so `-L` would count the raw data again; use plain `du -sh`.
 - Run it in background and save the output, e.g.
-  `du -hL --max-depth=1 results/ > logs/du_results.txt`; reuse that file if recent.
+  `mkdir -p logs && du -hL --max-depth=1 results/ > logs/du_results.txt`; reuse that file if recent.
 - On CINECA, `du` on `work/` or `results/` goes in a job (`/slurm-job`).
