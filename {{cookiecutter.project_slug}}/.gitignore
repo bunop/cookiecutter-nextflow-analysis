@@ -19,3 +19,4 @@ genome*
 *.err
 *.log
 *.xls*
+logs/

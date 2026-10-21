@@ -25,7 +25,7 @@ cookiecutter https://github.com/bunop/cookiecutter-nextflow-analysis.git
 
 ```
 {{cookiecutter.project_slug}}/
-├── .claude/skills   # Claude Code skills (e.g. /split-samplesheet)
+├── .claude/skills   # Claude Code skills (e.g. /split-samplesheet, /slurm-job)
 ├── README.md
 ├── conf
 ├── data
@@ -41,6 +41,7 @@ Customize `cookiecutter.json` with your project parameters, then generate a new 
 Generated projects ship with [Claude Code](https://claude.com/claude-code) skills in `.claude/skills/`:
 
 - `/split-samplesheet`: computes `seqkit stats`, builds the samplesheet, splits it into size-balanced batches, creates a test samplesheet/params, documents the steps in the README and commits.
+- `/slurm-job`: writes a SLURM job script in `scripts/` (or fills the placeholders of `scripts/launch.sh`) for the detected cluster (CINECA/CNR), or runs the command locally; always asks before launching.
 
 ## Contributing
 

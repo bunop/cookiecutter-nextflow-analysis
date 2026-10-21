@@ -21,12 +21,8 @@ will be one samplesheet (and params) per batch.
 - Find the raw data: `data/` (often a symlink or ignored by git) or a path
   given by the user. Look at a few file names (`find <path> -name '*.f*q.gz' | head`)
   to infer R1/R2 naming and whether samples are one per directory.
-- Collect what is missing, proposing these defaults:
-  - number of batches: **4** (rule of thumb: ~250 GB of fastq per batch,
-    check with `du -shL <data path>`);
-  - how to run seqkit: already in `PATH`, from the Singularity cache
-    `$NXF_SINGULARITY_CACHEDIR` (`ls $NXF_SINGULARITY_CACHEDIR | grep -i seqkit`)
-    or from conda.
+- Collect what is missing, proposing this default for the number of batches:
+  **4** (rule of thumb: ~250 GB of fastq per batch, check with `du -shL <data path>`).
 
 All commands run from the project root; data is in `data/` and generated files
 go in `conf/`. Paths are kept **relative** to the project root (Nextflow stages
@@ -43,9 +39,11 @@ find -L <data path> -name '*.fastq.gz' | sort | \
     xargs seqkit stats -j 4 -T > conf/seq_stats.txt
 ```
 
-(prefix `seqkit` with `singularity exec <image.img>` if needed).
-It may take hours: run it in background and check the output is complete
-(one row per fastq file) before moving on.
+It may take hours: follow the `slurm-job` skill (`.claude/skills/slurm-job/SKILL.md`)
+to find seqkit, write `scripts/seq_stats.sh` and run it as a SLURM job
+(mandatory on CINECA) or locally in background. As there, summarize and **ask
+for confirmation before launching**. Check the output is complete (one row per
+fastq file) before moving on.
 
 ## 2. Samplesheet
 
