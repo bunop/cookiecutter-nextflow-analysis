@@ -36,10 +36,9 @@ print(f"Nextflow as a job: {nextflow_as_a_job}")
 print(f"Scripts directory path: {scripts_dir}")
 
 # If include_data is false, remove the data directory
-if not include_data:
-    if os.path.isdir(data_dir):
-        shutil.rmtree(data_dir)
-        print("Folder 'data/' removed as requested.")
+if not include_data and os.path.isdir(data_dir):
+    shutil.rmtree(data_dir)
+    print("Folder 'data/' removed as requested.")
 
 if not nextflow_as_a_job:
     # If not setting up Nextflow as a job, remove the launch script
@@ -109,17 +108,12 @@ with open(params_path, "w") as f:
 print(f"Project type set to '{project_type}'. Configuration file 'conf/params.json' updated accordingly.")
 print("Please edit it further as needed.")
 
-# customize relying on project type
-if project_type == "wf-basecalling":
-    shutil.copy(
-        os.path.join("{{ cookiecutter._repo_dir }}", "templates", "parse_ont_report.py"),
-        os.path.join(scripts_dir, "parse_ont_report.py")
-    )
-    print("Custom script 'parse_ont_report.py' copied to scripts/ folder for wf-basecalling project.")
+# helper scripts shipped in scripts/ only for the project type that uses them
+type_scripts = {
+    "parse_ont_report.py": "wf-basecalling",
+    "bedMethyl2cov.py": "nf-core/methylong",
+}
 
-elif project_type == "nf-core/methylong":
-    shutil.copy(
-        os.path.join("{{ cookiecutter._repo_dir }}", "templates", "bedMethyl2cov.py"),
-        os.path.join(scripts_dir, "bedMethyl2cov.py")
-    )
-    print("Custom script 'bedMethyl2cov.py' copied to scripts/ folder for nf-core/methylong project.")
+for script, script_type in type_scripts.items():
+    if project_type != script_type:
+        os.remove(os.path.join(scripts_dir, script))

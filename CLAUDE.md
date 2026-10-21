@@ -36,8 +36,8 @@ To check Jinja whitespace/newline behavior in isolation without a full generatio
   - removes `data/` if `include_data` is false,
   - removes `scripts/launch.sh` if `nextflow_as_a_job` is false,
   - writes `conf/params.json` from a hardcoded per-`project_type` dict (`json_params` in the hook), falling back to `unknown_params`,
-  - copies an extra helper script into `scripts/` for specific project types (`parse_ont_report.py` for `wf-basecalling`, `bedMethyl2cov.py` for `nf-core/methylong`) — these scripts live in `templates/` and are copied with `shutil.copy`, not rendered as Jinja.
-  - When adding a new `project_type`, the default params and any extra copied script need to be added here, not just in the templates.
+  - removes the per-`project_type` helper scripts from `scripts/` when not needed (`parse_ont_report.py` is kept only for `wf-basecalling`, `bedMethyl2cov.py` only for `nf-core/methylong`; mapping in `type_scripts`). They live in the template's `scripts/` (rendered like any file, so no Jinja syntax in them): don't copy files from `templates/` in the hook, `_repo_dir` is relative (`.`) with `cookiecutter .` and the hook runs inside the generated project.
+  - When adding a new `project_type`, the default params and any type-specific script need to be added here, not just in the templates.
 
 ## Jinja whitespace conventions
 
