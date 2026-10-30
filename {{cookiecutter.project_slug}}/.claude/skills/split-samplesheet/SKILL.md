@@ -99,7 +99,8 @@ metadata file describes them all, **do not build the samplesheet of everything
 and merge it**. Ask for the metadata path, its delimiter and the columns to
 filter on, show the distinct values of those columns (`csvcut`/`csvstat`, or
 python if csvkit is missing; find csvkit as in `CLAUDE.md`, "Running tools")
-and confirm the criteria with the user. Then:
+and confirm the criteria with the user. If the metadata has a BOM or empty
+rows/columns (Excel exports), clean it first with `/clean-csv`. Then:
 
 - **Metadata has the fastq paths** (R1/R2 columns): skip `make_samplesheet.py` and
   select the rows with csvkit, writing the header expected by the pipeline

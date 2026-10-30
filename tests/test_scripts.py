@@ -74,3 +74,35 @@ def test_samples_file_filters_by_name_or_list(tmp_path):
                      "--format", "rnaseq")
         rows = list(csv.DictReader(result.stdout.splitlines()))
         assert [r["sample"] for r in rows] == ["s1"], samples
+
+
+def clean(tmp_path, content, *args):
+    src = tmp_path / "in.csv"
+    src.write_bytes(content)
+    return run("clean_csv.py", src, *args)
+
+
+def test_clean_csv_removes_bom_empty_rows_and_columns(tmp_path):
+    content = b"\xef\xbb\xbfsample,group,,note\ns1,x,,\n,,,\n\ns2,y,,\n"
+    result = clean(tmp_path, content)
+
+    assert result.returncode == 0, result.stderr
+    # BOM, delimiter-only row, blank line and unnamed empty column are gone;
+    # 'note' has a header but no values, so it is kept
+    assert result.stdout == "sample,group,note\ns1,x,\ns2,y,\n"
+    assert "WARNING" in result.stderr
+
+    result = clean(tmp_path, content, "--drop-empty-headed-columns")
+    assert result.stdout == "sample,group\ns1,x\ns2,y\n"
+
+
+def test_clean_csv_semicolon_and_quoted_newline(tmp_path):
+    result = clean(tmp_path, b'sample;note\ns1;"a\nb"\n;;\n')
+
+    assert result.stdout == 'sample;note\ns1;"a\nb"\n'
+
+
+def test_clean_csv_in_place(tmp_path):
+    clean(tmp_path, b"\xef\xbb\xbfa,b\n1,2\n,\n", "--in-place")
+
+    assert (tmp_path / "in.csv").read_bytes() == b"a,b\n1,2\n"
