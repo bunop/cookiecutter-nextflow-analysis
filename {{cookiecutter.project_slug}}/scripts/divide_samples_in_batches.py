@@ -1,8 +1,9 @@
 #! /usr/bin/env python3
 
 # A simple script to divide samples in batches for parallel processing relying on
-# the size of each sample, as reported by `seqkit stats`. Stats are joined to the
-# samplesheet by file path, so no assumption is made on sample names.
+# the size of each sample, as reported by `seqkit stats --all --tabular` (tsv, or
+# csv if converted with `in2csv`). Stats are joined to the samplesheet by file
+# path, so no assumption is made on sample names.
 
 import os
 import csv
@@ -28,7 +29,7 @@ def parse_args():
     parser.add_argument(
         "--stats",
         required=True,
-        help="Input statistics file (seqkit stats output, with or without -T)"
+        help="Input statistics file (seqkit stats output, tsv or csv)"
     )
     parser.add_argument(
         "--column",
@@ -61,32 +62,41 @@ def read_stats(path, column):
 
     by_path = {}
     by_name = collections.defaultdict(list)
-    header = None
 
-    with open(path) as stats_fh:
-        for line in stats_fh:
-            # shortcut: whitespace split breaks on paths with spaces, use a real tsv reader if needed
-            parts = line.split()
+    with open(path, newline="") as stats_fh:
+        lines = [line for line in stats_fh if line.strip()]
 
-            if not parts:
-                continue
+    if not lines:
+        sys.exit(f"ERROR: {path} is empty")
 
-            if header is None:
-                header = parts
-                if column not in header:
-                    sys.exit(f"ERROR: column '{column}' not found in {path}: {header}")
-                col_idx = header.index(column)
-                continue
+    # delimiter is detected from the header: tab (seqkit -T), comma (in2csv)
+    # or, as a last resort, whitespace (seqkit stats without -T)
+    if "\t" in lines[0]:
+        rows = list(csv.reader(lines, delimiter="\t"))
+    elif "," in lines[0]:
+        rows = list(csv.reader(lines, delimiter=","))
+    else:
+        rows = [line.split() for line in lines]
 
-            # xargs may call seqkit more than once: skip repeated headers
-            if parts == header:
-                continue
+    header = rows[0]
 
-            file_ = parts[0]
-            size = int(float(parts[col_idx].replace(",", "")))
+    for name in ("file", column):
+        if name not in header:
+            sys.exit(f"ERROR: column '{name}' not found in {path}: {header}")
 
-            by_path[os.path.realpath(file_)] = size
-            by_name[os.path.basename(file_)].append(size)
+    file_idx = header.index("file")
+    col_idx = header.index(column)
+
+    for row in rows[1:]:
+        # xargs may call seqkit more than once: skip repeated headers
+        if row == header:
+            continue
+
+        file_ = row[file_idx]
+        size = int(float(row[col_idx].replace(",", "")))
+
+        by_path[os.path.realpath(file_)] = size
+        by_name[os.path.basename(file_)].append(size)
 
     return by_path, by_name
 
@@ -121,8 +131,12 @@ if __name__ == "__main__":
 
     # sample is the 'sample' column, if any, else the first one
     sample_idx = header.index("sample") if "sample" in header else 0
+
+    # file columns: fastq_1/fastq_2 (rnaseq, sarek, ...), short_reads_1/2 (mag), path
     file_idxs = [
-        i for i, col in enumerate(header) if col.startswith("fastq") or col == "path"]
+        i for i, col in enumerate(header)
+        if col.startswith(("fastq", "short_reads_")) and not col.endswith("platform")
+        or col == "path"]
 
     if not file_idxs:
         sys.exit(f"ERROR: no fastq/path columns found in samplesheet header: {header}")
@@ -148,6 +162,9 @@ if __name__ == "__main__":
 
     # Counter per tracciare quante volte ogni sample viene scritto
     written_counter = collections.Counter()
+
+    # create the output directory if needed
+    os.makedirs(os.path.dirname(args.output_prefix) or ".", exist_ok=True)
 
     # iterate over batches and write a new samplesheet for each batch
     for i, batch in enumerate(batches):
