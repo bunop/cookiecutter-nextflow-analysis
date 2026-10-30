@@ -66,7 +66,7 @@ python3 scripts/make_samplesheet.py --path <data path> --format rnaseq > conf/sa
 python3 scripts/make_samplesheet.py --path <data path> --format methylseq [--genome <genome>] > conf/samplesheet_all.csv
 ```
 
-The `genome` column is left empty without `--genome`.
+The optional `genome` column is written only with `--genome`.
 {%- elif cookiecutter.project_type == "nf-core/smrnaseq" -%}
 ```bash
 python3 scripts/make_samplesheet.py --path <data path> --format nf-resequencing-mem > conf/samplesheet_all.csv

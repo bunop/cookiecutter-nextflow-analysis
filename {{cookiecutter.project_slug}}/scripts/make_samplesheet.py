@@ -107,7 +107,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--genome",
         type=str, default=None,
-        help="Genome to write in the 'genome' column of the methylseq format (default: empty).",
+        help="Genome to write in the 'genome' column of the methylseq format (default: no genome column).",
     )
     parser.add_argument(
         "--strandedness",
@@ -495,8 +495,8 @@ def create_rnaseq_samplesheet(paths: List[pathlib.Path], aliases: Dict, args: ar
 
 def create_methylseq_samplesheet(paths: List[pathlib.Path], aliases: Dict, args: argparse.Namespace) -> None:
     """
-    Create a samplesheet for nf-core/methylseq: the genome column is empty
-    when --genome is not specified.
+    Create a samplesheet for nf-core/methylseq: the optional genome column
+    is written only when --genome is specified.
 
     Args:
         paths: Root directory path(s) containing sample folders
@@ -506,13 +506,18 @@ def create_methylseq_samplesheet(paths: List[pathlib.Path], aliases: Dict, args:
 
     # define header for methylseq format
     writer = csv.writer(sys.stdout, delimiter=',', lineterminator='\n')
-    header = ['sample', 'fastq_1', 'fastq_2', 'genome']
+    header = ['sample', 'fastq_1', 'fastq_2']
+    if args.genome:
+        header.append('genome')
     writer.writerow(header)
     sys.stdout.flush()
 
     record_count = 0
     for sample_name, fastq_1, fastq_2 in scan_for_fastq_files(paths, aliases, args):
-        writer.writerow([sample_name, fastq_1, fastq_2, args.genome or ''])
+        row = [sample_name, fastq_1, fastq_2]
+        if args.genome:
+            row.append(args.genome)
+        writer.writerow(row)
         sys.stdout.flush()
         record_count += 1
 
