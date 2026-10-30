@@ -30,14 +30,21 @@ the files when running remotely).
 
 ## 1. Statistics
 
-seqkit stats is disk bound and does not scale with threads: keep `-j 4`.
-Use the same (relative) paths as the samplesheet, so stats can be joined to it
+seqkit stats is disk bound and does not scale with threads: keep `--threads 4`.
+Use `--all` (all columns, so `sum_len` and `num_seqs` are both available) and the
+same (relative) paths as the samplesheet, so stats can be joined to it
 (`-L` follows `data/` if it is a symlink):
 
 ```bash
 find -L <data path> -name '*.fastq.gz' | sort | \
-    xargs seqkit stats -j 4 -T > conf/seq_stats.txt
+    xargs seqkit stats --quiet --all --tabular --threads 4 > conf/seq_stats.tsv.tmp
+mv conf/seq_stats.tsv.tmp conf/seq_stats.tsv
 ```
+
+- Write to `.tmp` and `mv` at the end, so a failed job never leaves a partial file.
+- If `in2csv` (csvkit) is available, the same stats can be saved as
+  `conf/seq_stats.csv` by piping into `in2csv -t -f csv` (activate its conda env:
+  `conda run` does not forward stdin). It is optional: step 3 reads both.
 
 It may take hours: follow the `slurm-job` skill (`.claude/skills/slurm-job/SKILL.md`)
 to find seqkit, write `scripts/seq_stats.sh` and run it as a SLURM job
@@ -67,7 +74,7 @@ python3 scripts/make_samplesheet.py --path <data path> > conf/samplesheet_all.cs
 
 This uses the script's default format: check its header against
 `conf/samplesheet.csv` and, if it differs, pick another `--format`
-(see `--help`).
+(see `--help`; `--format mag` is for nf-core/mag, Illumina only).
 {%- endif %}
 
 - Pass `--path <data path>` as relative path, from the project root.
@@ -82,12 +89,12 @@ This uses the script's default format: check its header against
 
 ```bash
 python3 scripts/divide_samples_in_batches.py \
-    --samplesheet conf/samplesheet_all.csv --stats conf/seq_stats.txt \
+    --samplesheet conf/samplesheet_all.csv --stats conf/seq_stats.tsv \
     --num_batches 4 -o conf/samplesheet
 ```
 
-It sums the `sum_len` (bases) of all files of a sample (`--column num_seqs`
-to use reads), sorts samples by size and distributes them round robin, writing
+`--stats` accepts the TSV or the CSV version. It sums the `sum_len` (bases) of
+all files of a sample (`--column num_seqs` to use reads), sorts samples by size and distributes them round robin, writing
 `conf/samplesheet_aa.csv`, `conf/samplesheet_ab.csv`, ... (samples sorted by
 size, descending). It must end with "All samples were written exactly once":
 otherwise investigate. Report the per-batch summary to the user.
@@ -95,7 +102,7 @@ otherwise investigate. Report the per-batch summary to the user.
 ## 4. Test files
 
 From one batch take the **first 3 and the last 3 samples** (biggest and
-smallest: verify the ordering against `conf/seq_stats.txt`, don't trust it blindly;
+smallest: verify the ordering against `conf/seq_stats.tsv`, don't trust it blindly;
 if the batch has 6 samples or fewer, tell the user the test set is the whole
 batch) and write, keeping the header and all rows (lanes) of those samples:
 
@@ -118,6 +125,6 @@ the scripts, number of samples and size of each batch.
 - Remove the template files no longer needed (e.g. `conf/samplesheet.csv` if
   only the per-batch files are used, `.gitkeep` files in non-empty folders,
   placeholder text in the README): list them and ask before deleting.
-- `conf/seq_stats.txt` is small: commit it.
+- `conf/seq_stats.tsv` is small: commit it.
 - Show `git status` and the commit message, ask for confirmation, then commit
   everything. The working tree must be clean at the end (`git status`).

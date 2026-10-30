@@ -34,7 +34,8 @@ Check in this order and use the first that works:
 - already in `PATH` (`command -v <tool>`);
 - a Singularity image in the Nextflow cache: `ls $NXF_SINGULARITY_CACHEDIR | grep -i <tool>`,
   run with `singularity run --bind "$PWD" <image> <tool> ...` (add `,$SCRATCH`
-  to the bind paths if data lives there);
+  or any other folder holding the data, or the targets of the `data/` symlinks,
+  to the bind paths: `SINGULARITY_BINDPATH="$PWD,<other path>"`);
 - a conda/micromamba env (`conda env list` / `micromamba env list`), activated with:
 
 ```bash
@@ -49,6 +50,9 @@ else
     exit 1
 fi
 ```
+
+Activate the env in the script (as above) instead of `conda run`, which does
+not forward stdin when the command is in a pipe.
 
 ## 2. Ask what is missing
 
@@ -90,7 +94,8 @@ fi
   - `#SBATCH --account=<account>`
   - `#SBATCH --partition=g100_usr_prod`
   - `#SBATCH --qos=normal` if time ≤ 24h, `#SBATCH --qos=g100_qos_lprod` if time > 24h.
-- CNR: no account/qos; `--partition=<test partition>` only if time ≤ 4h and the user wants it.
+- CNR: no account/qos; `--partition=<test partition>` only if time ≤ 4h and the user wants it;
+  `--nodelist=<node>` only if the user asks to pin the job (e.g. the node that mounts the data).
 - Paths are **relative** to the project root (the job is submitted from there);
   pass threads as `$SLURM_CPUS_PER_TASK` (`${SLURM_CPUS_PER_TASK:-1}` if it may run without SLURM).
 - The `if [ ! -e <output> ]` guard makes the job safe to resubmit: one guard per step.
