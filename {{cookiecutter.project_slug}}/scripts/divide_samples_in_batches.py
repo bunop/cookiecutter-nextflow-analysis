@@ -153,14 +153,20 @@ if __name__ == "__main__":
     # sort samples by size (descending)
     stats = sample_sizes.most_common()
 
-    # now we need to divide samples in batches: simple iterate over stats records
-    # put every record in a different batch, then start again from the first batch
-    batches = [[] for _ in range(args.num_batches)]
+    # no empty batches when there are fewer samples than batches
+    num_batches = max(1, min(args.num_batches, len(stats)))
 
-    for i, record in enumerate(stats):
-        batches[i % args.num_batches].append(record)
+    # divide samples in batches: put each sample (largest first) in the batch
+    # with the smallest total size so far
+    batches = [[] for _ in range(num_batches)]
+    totals = [0] * num_batches
 
-    # Counter per tracciare quante volte ogni sample viene scritto
+    for record in stats:
+        i = totals.index(min(totals))
+        batches[i].append(record)
+        totals[i] += record[1]
+
+    # count how many times each sample is written
     written_counter = collections.Counter()
 
     # create the output directory if needed

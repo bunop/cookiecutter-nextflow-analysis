@@ -39,9 +39,10 @@ print(f"Use AWS Batch: {use_aws_batch}")
 print(f"Scripts directory path: {scripts_dir}")
 
 # If include_data is false, remove the data directory
-if not include_data and os.path.isdir(data_dir):
-    shutil.rmtree(data_dir)
-    print("Folder 'data/' removed as requested.")
+if not include_data:
+    if os.path.isdir(data_dir):
+        shutil.rmtree(data_dir)
+        print("Folder 'data/' removed as requested.")
 
 if not nextflow_as_a_job:
     # If not setting up Nextflow as a job, remove the launch script

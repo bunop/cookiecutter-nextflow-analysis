@@ -356,7 +356,7 @@ def scan_for_fastq_files(paths: List[pathlib.Path], aliases: Dict, args: argpars
     logger.debug(f"Found {len(directories)} directories")
 
     # samples to keep, if requested
-    wanted = read_samples(args.samples, args.samples_column) if args.samples else None
+    wanted = args.wanted
     matched = set()
     skipped = 0
 
@@ -559,8 +559,11 @@ if __name__ == "__main__":
     if args.genome and args.format != "methylseq":
         logger.warning(f"--genome is ignored by the {args.format} format")
 
+    # read the samples to keep before writing anything, so a bad file leaves no partial output
+    args.wanted = read_samples(args.samples, args.samples_column) if args.samples else None
+
     logger.info("Starting samplesheet creation")
-    aliases =log_parameters_and_get_aliases(paths, args)
+    aliases = log_parameters_and_get_aliases(paths, args)
 
     if args.format == "nf-resequencing-mem":
         logger.debug("Creating nf-resequencing-mem samplesheet")
