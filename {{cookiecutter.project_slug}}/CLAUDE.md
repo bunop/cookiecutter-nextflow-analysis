@@ -27,3 +27,13 @@ possibly tens of minutes for `work/` or `results/`.
 - Run it in background and save the output, e.g.
   `mkdir -p logs && du -hL --max-depth=1 results/ > logs/du_results.txt`; reuse that file if recent.
 - On CINECA, `du` on `work/` or `results/` goes in a job (`/slurm-job`).
+{%- if cookiecutter.use_aws_batch %}
+
+## AWS Batch
+
+- Use the profile of `aws.profile` in `conf/*.config` (`export AWS_PROFILE=<profile>`);
+  the Batch environment is usually Spot, so lost tasks are retried.
+- Run one batch of samples at a time; before `aws s3 rm` on a shared work
+  directory make sure no other run uses it, and ask for confirmation.
+- Run costs and their forecast: `/aws-costs` (Batch keeps jobs only 7 days: read them soon after the run).
+{%- endif %}

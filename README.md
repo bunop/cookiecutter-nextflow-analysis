@@ -42,6 +42,7 @@ Customize `cookiecutter.json` with your project parameters, then generate a new 
 Generated projects ship with [Claude Code](https://claude.com/claude-code) skills in `.claude/skills/`:
 
 - `/split-samplesheet`: computes `seqkit stats`, builds the samplesheet, splits it into size-balanced batches, creates a test samplesheet/params, documents the steps in the README and commits.
+- `/aws-costs` (only with `use_aws_batch`): reads the cost of a run on AWS Batch with `scripts/aws_costs.py` (Cost Explorer, CloudTrail, Batch), writes CSV files in `docs/aws-costs/` and forecasts the cost of the full dataset.
 - `/slurm-job`: writes a SLURM job script in `scripts/` (or fills the placeholders of `scripts/launch.sh`) for the detected cluster (CINECA/CNR), or runs the command locally; always asks before launching.
 
 ## Contributing

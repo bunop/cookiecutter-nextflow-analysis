@@ -16,7 +16,7 @@ Generate a project from the template (run from the repo root, or point cookiecut
 cookiecutter .
 ```
 
-This prompts interactively for the values in `cookiecutter.json` (`project_slug`, `include_data`, `project_type`, `nextflow_as_a_job`, `with_docker`). To test non-interactively / for a specific combination:
+This prompts interactively for the values in `cookiecutter.json` (`project_slug`, `include_data`, `project_type`, `nextflow_as_a_job`, `with_docker`, `use_aws_batch`). To test non-interactively / for a specific combination:
 
 ```bash
 cookiecutter . --no-input project_type=wf-basecalling with_docker=true
@@ -38,6 +38,7 @@ To check Jinja whitespace/newline behavior in isolation without a full generatio
   - removes `scripts/launch.sh` if `nextflow_as_a_job` is false,
   - writes `conf/params.json` from a hardcoded per-`project_type` dict (`json_params` in the hook), falling back to `unknown_params`,
   - removes the per-`project_type` helper scripts from `scripts/` when not needed (`parse_ont_report.py` is kept only for `wf-basecalling`, `bedMethyl2cov.py` only for `nf-core/methylong`; mapping in `type_scripts`). They live in the template's `scripts/` (rendered like any file, so no Jinja syntax in them): don't copy files from `templates/` in the hook, `_repo_dir` is relative (`.`) with `cookiecutter .` and the hook runs inside the generated project.
+  - removes `scripts/aws_costs.py` and `.claude/skills/aws-costs/` when `use_aws_batch` is false (the `/aws-costs` skill drives `aws_costs.py`: Cost Explorer + CloudTrail + Batch → CSV in `docs/aws-costs/`, then a forecast from CPU-hours per process; the script is generic, process classes come from `conf/aws_cost_classes.json`).
   - When adding a new `project_type`, the default params and any type-specific script need to be added here, not just in the templates.
 
 ## Jinja whitespace conventions
