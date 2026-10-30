@@ -10,6 +10,8 @@ include_data = include_data_raw in ("yes", "y", "true", "1")
 project_type = "{{ cookiecutter.project_type }}".lower()
 nextflow_as_a_job_raw = "{{ cookiecutter.nextflow_as_a_job }}".strip().lower()
 nextflow_as_a_job = nextflow_as_a_job_raw in ("yes", "y", "true", "1")
+use_aws_batch_raw = "{{ cookiecutter.use_aws_batch }}".strip().lower()
+use_aws_batch = use_aws_batch_raw in ("yes", "y", "true", "1")
 
 # get current working directory
 cwd = os.path.abspath(os.getcwd())
@@ -33,6 +35,7 @@ print(f"Project type selected: {project_type}")
 print(f"Include data folder: {include_data}")
 print(f"Params file path: {params_path}")
 print(f"Nextflow as a job: {nextflow_as_a_job}")
+print(f"Use AWS Batch: {use_aws_batch}")
 print(f"Scripts directory path: {scripts_dir}")
 
 # If include_data is false, remove the data directory
@@ -109,17 +112,17 @@ with open(params_path, "w") as f:
 print(f"Project type set to '{project_type}'. Configuration file 'conf/params.json' updated accordingly.")
 print("Please edit it further as needed.")
 
-# customize relying on project type
-if project_type == "wf-basecalling":
-    shutil.copy(
-        os.path.join("{{ cookiecutter._repo_dir }}", "templates", "parse_ont_report.py"),
-        os.path.join(scripts_dir, "parse_ont_report.py")
-    )
-    print("Custom script 'parse_ont_report.py' copied to scripts/ folder for wf-basecalling project.")
+# helper scripts shipped in scripts/ only for the project type that uses them
+type_scripts = {
+    "parse_ont_report.py": "wf-basecalling",
+    "bedMethyl2cov.py": "nf-core/methylong",
+}
 
-elif project_type == "nf-core/methylong":
-    shutil.copy(
-        os.path.join("{{ cookiecutter._repo_dir }}", "templates", "bedMethyl2cov.py"),
-        os.path.join(scripts_dir, "bedMethyl2cov.py")
-    )
-    print("Custom script 'bedMethyl2cov.py' copied to scripts/ folder for nf-core/methylong project.")
+for script, script_type in type_scripts.items():
+    if project_type != script_type:
+        os.remove(os.path.join(scripts_dir, script))
+
+# the AWS cost script and its skill are useful only for runs on AWS Batch
+if not use_aws_batch:
+    os.remove(os.path.join(scripts_dir, "aws_costs.py"))
+    shutil.rmtree(os.path.join(project_dir, ".claude", "skills", "aws-costs"))

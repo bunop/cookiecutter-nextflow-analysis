@@ -16,7 +16,7 @@ Generate a project from the template (run from the repo root, or point cookiecut
 cookiecutter .
 ```
 
-This prompts interactively for the values in `cookiecutter.json` (`project_slug`, `include_data`, `project_type`, `nextflow_as_a_job`, `with_docker`). To test non-interactively / for a specific combination:
+This prompts interactively for the values in `cookiecutter.json` (`project_slug`, `include_data`, `project_type`, `nextflow_as_a_job`, `with_docker`, `use_aws_batch`). To test non-interactively / for a specific combination:
 
 ```bash
 cookiecutter . --no-input project_type=wf-basecalling with_docker=true
@@ -30,13 +30,16 @@ To check Jinja whitespace/newline behavior in isolation without a full generatio
 
 - `cookiecutter.json` — defines the prompts/choices. `project_type` is the main branch point (`unknown`, `wf-basecalling`, `nf-core/methylseq`, `nf-core/methylong`, `nf-core/rnaseq`, `nf-core/smrnaseq`); most templates `{% if/elif %}` on this value.
 - `{{cookiecutter.project_slug}}/` — the actual template for the generated project (README, `conf/`, `data/`, `scripts/launch.sh`). Files here can be `.jinja`-rendered even without the extension (cookiecutter renders all files by default).
+- `{{cookiecutter.project_slug}}/.claude/skills/` — Claude Code skills shipped with every generated project (rendered by Jinja like any other file, so they can branch on `project_type`). `split-samplesheet` drives `scripts/make_samplesheet.py` + `scripts/divide_samples_in_batches.py` (seqkit stats → samplesheet → size-balanced batches → test set → README → commit); its seqkit step delegates to `slurm-job`, which detects the site at runtime (CINECA if `$PRJ_ACCOUNT` or `~/.ch_acc.def`, CNR if only `sbatch`, else local) and writes `scripts/<name>.sh` with the account hardcoded per project. Test a skill end-to-end by generating a project with fake gzipped FASTQ in `data/` and running `claude -p "/<skill> ..."` inside it.
+- `{{cookiecutter.project_slug}}/CLAUDE.md` — project-wide rules for Claude Code in generated projects (site detection CINECA/CNR/local, confirm before launching, how to find and run tools: PATH/Singularity/conda, `du` in background): put rules shared by all skills here, not in each skill.
 - `templates/` — **not** copied into the generated project directly. It's added as an extra Jinja `{% include %}` search path (cookiecutter adds the repo's `templates/` dir to the loader search path automatically), so files here are pulled in piecemeal by `{% include "..." %}` tags from files under `{{cookiecutter.project_slug}}/`. Examples: `templates/README/basecalling.jinja` is included by the README when `project_type == "wf-basecalling"`; `templates/cineca.sh`, `templates/wf-basecalling.sh`, `templates/methylseq.sh`, etc. are included by `scripts/launch.sh` to assemble the SLURM job script per pipeline.
 - `hooks/post_gen_project.py` — runs after generation. It:
   - removes `data/` if `include_data` is false,
   - removes `scripts/launch.sh` if `nextflow_as_a_job` is false,
   - writes `conf/params.json` from a hardcoded per-`project_type` dict (`json_params` in the hook), falling back to `unknown_params`,
-  - copies an extra helper script into `scripts/` for specific project types (`parse_ont_report.py` for `wf-basecalling`, `bedMethyl2cov.py` for `nf-core/methylong`) — these scripts live in `templates/` and are copied with `shutil.copy`, not rendered as Jinja.
-  - When adding a new `project_type`, the default params and any extra copied script need to be added here, not just in the templates.
+  - removes the per-`project_type` helper scripts from `scripts/` when not needed (`parse_ont_report.py` is kept only for `wf-basecalling`, `bedMethyl2cov.py` only for `nf-core/methylong`; mapping in `type_scripts`). They live in the template's `scripts/` (rendered like any file, so no Jinja syntax in them): don't copy files from `templates/` in the hook, `_repo_dir` is relative (`.`) with `cookiecutter .` and the hook runs inside the generated project.
+  - removes `scripts/aws_costs.py` and `.claude/skills/aws-costs/` when `use_aws_batch` is false (the `/aws-costs` skill drives `aws_costs.py`: Cost Explorer + CloudTrail + Batch → CSV in `docs/aws-costs/`, then a forecast from CPU-hours per process; the script is generic, process classes come from `conf/aws_cost_classes.json`).
+  - When adding a new `project_type`, the default params and any type-specific script need to be added here, not just in the templates.
 
 ## Jinja whitespace conventions
 

@@ -11,11 +11,13 @@
     ],
     "nextflow_as_a_job": false,
     "with_docker": false,
+    "use_aws_batch": false,
     "__prompts__": {
         "project_slug": "Enter the name of your project (used as folder name and prefix for files):",
         "include_data": "Do you want to include a 'data/' folder in the project structure?",
         "project_type": "Select the type of analysis you want to set up:",
         "nextflow_as_a_job": "Do you want to set up a launch script for running Nextflow as a job on an HPC cluster?",
-        "with_docker": "Do you want to include Docker support in your project (default is using Singularity)?"
+        "with_docker": "Do you want to include Docker support in your project (default is using Singularity)?",
+        "use_aws_batch": "Will the pipeline run on AWS Batch (adds the /aws-costs skill and scripts/aws_costs.py)?"
     }
 }
