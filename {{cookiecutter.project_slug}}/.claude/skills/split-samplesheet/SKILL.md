@@ -60,7 +60,13 @@ Use `scripts/make_samplesheet.py` (`--help` for all options) on the data folder:
 ```bash
 python3 scripts/make_samplesheet.py --path <data path> --format rnaseq > conf/samplesheet_all.csv
 ```
-{%- elif cookiecutter.project_type in ["nf-core/methylseq", "nf-core/smrnaseq"] -%}
+{%- elif cookiecutter.project_type == "nf-core/methylseq" -%}
+```bash
+python3 scripts/make_samplesheet.py --path <data path> --format methylseq [--genome <genome>] > conf/samplesheet_all.csv
+```
+
+The `genome` column is left empty without `--genome`.
+{%- elif cookiecutter.project_type == "nf-core/smrnaseq" -%}
 ```bash
 python3 scripts/make_samplesheet.py --path <data path> --format nf-resequencing-mem > conf/samplesheet_all.csv
 ```
@@ -84,6 +90,44 @@ This uses the script's default format: check its header against
   modify it as needed (and mention it in the README).
 - Check: number of rows vs number of fastq pairs, no duplicated sample names,
   all paths exist.
+
+### Only some samples (metadata file)
+
+If `data/` holds more than this project (other experiments, species) and a
+metadata file describes them all, **do not build the samplesheet of everything
+and merge it**. Ask for the metadata path, its delimiter and the columns to
+filter on, show the distinct values of those columns (`csvcut`/`csvstat`, or
+python if csvkit is missing) and confirm the criteria with the user. Then:
+
+- **Metadata has the fastq paths** (R1/R2 columns): skip `make_samplesheet.py` and
+  select the rows with csvkit, writing the header expected by the pipeline
+  (see `conf/samplesheet.csv`) and the paths relative to the project root:
+
+  ```bash
+  csvgrep -d ";" -c "<column>" -r "<regex>" <metadata> | \
+      csvgrep -c "<other column>" -m "<value>" | \
+      csvcut -c "<sample>","<R1>","<R2>" | \
+      sed -e '1c sample,fastq_1,fastq_2' -e '2,$ s#,<R1 prefix>#,data/<R1 prefix>#g' \
+      > conf/samplesheet_all.csv
+  ```
+
+  Check the regex against the values of the column (typos in the metadata are
+  common), the number of rows, unique sample names and that the files exist.
+
+- **Sample names can be derived from the file names**: write the wanted names
+  (one per line, or a column of a CSV/TSV) and pass them to the script, which
+  keeps only those samples and warns about names with no fastq files:
+
+  ```bash
+  csvgrep ... <metadata> | csvcut -c "<sample>" > conf/samples_<name>.csv
+  python3 scripts/make_samplesheet.py --path <data path> ... \
+      --samples conf/samples_<name>.csv --samples_column "<sample>" > conf/samplesheet_all.csv
+  ```
+
+  Names are matched after `--aliases`; the original name is accepted too.
+
+Keep the filter commands (and the list, if any) for the README (step 5). One
+selection per run: split each samplesheet in batches separately (step 3).
 
 ## 3. Split in batches
 
