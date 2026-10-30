@@ -37,6 +37,24 @@ cookiecutter https://github.com/bunop/cookiecutter-nextflow-analysis.git
 
 Customize `cookiecutter.json` with your project parameters, then generate a new project structure.
 
+## Updating existing projects
+
+Use [cruft](https://cruft.github.io/cruft/) (`pipx install cruft`) to pull template changes into a generated project. It stores the template commit and your answers in `.cruft.json` and applies the diff between the old and new template versions as a patch, keeping your local edits.
+
+New projects: generate with `cruft create <path-or-url-of-this-repo>` instead of `cookiecutter`.
+
+Projects already generated with `cookiecutter`: inside the project, run `cruft link <path-or-url> --checkout <commit>` (the template commit it was generated from, or the closest one by date), then `git add .cruft.json && git commit`. `link` asks for the cookiecutter answers; give the same ones used originally.
+
+Then, from a clean git working tree:
+
+```bash
+cruft check    # is the template ahead?
+cruft diff     # preview the changes
+cruft update   # apply them; resolve any *.rej files
+```
+
+Review with `git diff --staged` and commit. Files rewritten by the post-generation hook (e.g. `conf/params.json`) are the likeliest to conflict.
+
 ## Claude Code skills
 
 Generated projects ship with [Claude Code](https://claude.com/claude-code) skills in `.claude/skills/`:
