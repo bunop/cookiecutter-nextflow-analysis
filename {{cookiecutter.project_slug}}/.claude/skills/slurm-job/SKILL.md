@@ -29,14 +29,13 @@ Also look at `scripts/*.sh`, `README.md` and `git status`: reuse what exists.
 
 ## 1. How to run the tool
 
-Check in this order and use the first that works:
+Find the tool as described in `CLAUDE.md` ("Running tools": `PATH`, Singularity
+image, conda/micromamba env). In the script:
 
-- already in `PATH` (`command -v <tool>`);
-- a Singularity image in the Nextflow cache: `ls $NXF_SINGULARITY_CACHEDIR | grep -i <tool>`,
-  run with `singularity run --bind "$PWD" <image> <tool> ...` (add `,$SCRATCH`
-  or any other folder holding the data, or the targets of the `data/` symlinks,
-  to the bind paths: `SINGULARITY_BINDPATH="$PWD,<other path>"`);
-- a conda/micromamba env (`conda env list` / `micromamba env list`), activated with:
+- Singularity: `singularity exec --bind "$PWD" <image> <tool> ...`; if the data
+  is elsewhere (e.g. `$SCRATCH`, targets of the `data/` symlinks) export
+  `SINGULARITY_BINDPATH="$PWD,<other path>"` before it;
+- conda/micromamba env: activate it with
 
 ```bash
 if command -v conda &> /dev/null; then

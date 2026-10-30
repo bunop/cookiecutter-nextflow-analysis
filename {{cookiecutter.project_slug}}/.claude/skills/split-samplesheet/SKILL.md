@@ -42,12 +42,13 @@ mv conf/seq_stats.tsv.tmp conf/seq_stats.tsv
 ```
 
 - Write to `.tmp` and `mv` at the end, so a failed job never leaves a partial file.
-- If `in2csv` (csvkit) is available, the same stats can be saved as
-  `conf/seq_stats.csv` by piping into `in2csv -t -f csv` (activate its conda env:
-  `conda run` does not forward stdin). It is optional: step 3 reads both.
+- If `in2csv` (csvkit) is available (find it as in `CLAUDE.md`, "Running tools"),
+  the same stats can be saved as `conf/seq_stats.csv` by piping into
+  `in2csv -t -f csv` (in a script activate its env: `conda run` does not forward
+  stdin). It is optional: step 3 reads both.
 
-It may take hours: follow the `slurm-job` skill (`.claude/skills/slurm-job/SKILL.md`)
-to find seqkit, write `scripts/seq_stats.sh` and run it as a SLURM job
+It may take hours: find seqkit as in `CLAUDE.md` ("Running tools") and follow
+the `slurm-job` skill (`.claude/skills/slurm-job/SKILL.md`) to write `scripts/seq_stats.sh` and run it as a SLURM job
 (mandatory on CINECA) or locally in background. As there, summarize and **ask
 for confirmation before launching**. Check the output is complete (one row per
 fastq file) before moving on.
@@ -97,7 +98,8 @@ If `data/` holds more than this project (other experiments, species) and a
 metadata file describes them all, **do not build the samplesheet of everything
 and merge it**. Ask for the metadata path, its delimiter and the columns to
 filter on, show the distinct values of those columns (`csvcut`/`csvstat`, or
-python if csvkit is missing) and confirm the criteria with the user. Then:
+python if csvkit is missing; find csvkit as in `CLAUDE.md`, "Running tools")
+and confirm the criteria with the user. Then:
 
 - **Metadata has the fastq paths** (R1/R2 columns): skip `make_samplesheet.py` and
   select the rows with csvkit, writing the header expected by the pipeline
