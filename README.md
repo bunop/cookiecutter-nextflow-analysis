@@ -13,13 +13,17 @@ A cookiecutter template for creating reproducible data analysis with nextflow.
 ## Quick Start
 
 ```bash
-cookiecutter https://github.com/bunop/cookiecutter-nextflow-analysis.git
+pipx install cruft
+cruft create https://github.com/bunop/cookiecutter-nextflow-analysis.git
 ```
+
+`cruft` is the recommended way: it records the template version in `.cruft.json`, so the project can later be [updated](#updating-existing-projects) when the template changes. Plain `cookiecutter <url>` also works, but the project cannot be updated without `cruft link`.
 
 ## Requirements
 
 - Python 3.7+
 - Cookiecutter
+- [cruft](https://cruft.github.io/cruft/) (recommended, to keep projects updatable)
 
 ## Project Structure
 
@@ -36,6 +40,24 @@ cookiecutter https://github.com/bunop/cookiecutter-nextflow-analysis.git
 ## Usage
 
 Customize `cookiecutter.json` with your project parameters, then generate a new project structure.
+
+## Updating existing projects
+
+Use `cruft` to pull template changes into a generated project. It stores the template commit and your answers in `.cruft.json` and applies the diff between the old and new template versions as a patch, keeping your local edits.
+
+New projects: generate with `cruft create` (see Quick Start) and they are ready to update.
+
+Projects generated with plain `cookiecutter`: inside the project, run `cruft link <path-or-url> --checkout <commit>` (the template commit it was generated from, or the closest one by date), then `git add .cruft.json && git commit`. `link` prompts for the cookiecutter answers: give the same ones used originally. Do not use `-y` alone: it silently takes the defaults of `cookiecutter.json` (e.g. `project_type=unknown`), and `cruft update` would then propose the wrong files. To skip the prompts, pass the answers, e.g. `-y --extra-context '{"project_type": "wf-basecalling"}'`, and check `.cruft.json` afterwards.
+
+Then, from a clean git working tree:
+
+```bash
+cruft check    # is the template ahead?
+cruft diff     # preview the changes
+cruft update   # apply them
+```
+
+Changes are left uncommitted (`.cruft.json` is modified but not staged). Where a file was edited both locally and in the template, `cruft update` writes git conflict markers (`<<<<<<<`) in it, no `.rej` files: find them with `git status` (`UU`), resolve, then `git add -A` and commit.
 
 ## Claude Code skills
 
