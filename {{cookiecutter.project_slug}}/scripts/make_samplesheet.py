@@ -28,7 +28,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--format",
-        choices=["sarek", "nf-resequencing-mem", "rnaseq", "mag"],
+        choices=["sarek", "nf-resequencing-mem", "rnaseq", "mag", "methylseq"],
         default="sarek",
         help="Output format for the samplesheet (default: sarek)."
     )
@@ -88,6 +88,26 @@ def parse_args() -> argparse.Namespace:
         type=str, nargs='+',
         default=["sampleName", "clientId"],
         help="Columns from the aliases CSV to define sample_names (from -> to). default: %(default)s.",
+    )
+    parser.add_argument(
+        "--samples",
+        type=pathlib.Path,
+        help=(
+            "Keep only the samples listed in this file: a CSV/TSV with a header "
+            "(see --samples_column) or a list with one sample name per line. "
+            "Names are matched after applying --aliases (the original name is "
+            "accepted too)."
+        ),
+    )
+    parser.add_argument(
+        "--samples_column",
+        type=str, default="sample",
+        help="Column of the --samples file with the sample names (default: %(default)s).",
+    )
+    parser.add_argument(
+        "--genome",
+        type=str, default=None,
+        help="Genome to write in the 'genome' column of the methylseq format (default: empty).",
     )
     parser.add_argument(
         "--strandedness",
@@ -280,6 +300,47 @@ def read_aliases(path: pathlib.Path) -> List[Dict]:
     return sanitized_data
 
 
+def read_samples(path: pathlib.Path, column: str) -> set:
+    """
+    Read the sample names to keep from a CSV/TSV file with a header or from a
+    plain list (one name per line).
+
+    Args:
+        path: Path to the file with the sample names
+        column: Column with the sample names, when the file has a header
+
+    Returns:
+        Set of sample names
+    """
+
+    with open(path, 'r', newline='') as handle:
+        lines = [line.rstrip('\r\n') for line in handle if line.strip()]
+
+    if not lines:
+        logger.error(f"Samples file {path} is empty.")
+        sys.exit(1)
+
+    try:
+        dialect = csv.Sniffer().sniff(lines[0], delimiters=",;\t")
+    except csv.Error:
+        # a single column: a list of names, with or without the header
+        dialect = None
+
+    if dialect is None:
+        names = [line.strip() for line in lines]
+        if names[0] == column:
+            names = names[1:]
+
+    else:
+        reader = csv.DictReader(lines, dialect=dialect)
+        if column not in (reader.fieldnames or []):
+            logger.error(f"Column '{column}' not found in {path}: {reader.fieldnames}")
+            sys.exit(1)
+        names = [row[column].strip() for row in reader]
+
+    return {name for name in names if name}
+
+
 def scan_for_fastq_files(paths: List[pathlib.Path], aliases: Dict, args: argparse.Namespace) -> Generator[Tuple[str, pathlib.Path, pathlib.Path], None, None]:
     """
     Scan the provided paths for FASTQ files and yield sample name, R1 path, and R2 path tuples.
@@ -293,6 +354,11 @@ def scan_for_fastq_files(paths: List[pathlib.Path], aliases: Dict, args: argpars
         directories.extend(search_directories(path))
 
     logger.debug(f"Found {len(directories)} directories")
+
+    # samples to keep, if requested
+    wanted = read_samples(args.samples, args.samples_column) if args.samples else None
+    matched = set()
+    skipped = 0
 
     for item in directories:
         logger.debug(f"Processing: {item}")
@@ -313,6 +379,17 @@ def scan_for_fastq_files(paths: List[pathlib.Path], aliases: Dict, args: argpars
                         logger.debug(f"Excluding sample {sample_name} due to exclude_pattern match.")
                         continue
 
+                    if wanted is not None:
+                        # the metadata may use the alias or the name found in the files
+                        original_name = get_sample_name(item, fastq_1, args, {})
+                        found = {sample_name, original_name} & wanted
+
+                        if not found:
+                            skipped += 1
+                            continue
+
+                        matched.update(found)
+
                     yield (sample_name, fastq_1, fastq_2)
 
             else:
@@ -320,6 +397,12 @@ def scan_for_fastq_files(paths: List[pathlib.Path], aliases: Dict, args: argpars
 
         else:
             logger.warning(f"Skipping {item}: not a directory")
+
+    if wanted is not None:
+        logger.info(f"Kept {len(matched)} of {len(wanted)} samples in {args.samples}, skipped {skipped} fastq pairs not listed")
+
+        if wanted - matched:
+            logger.warning(f"{len(wanted - matched)} samples in {args.samples} have no fastq files: {sorted(wanted - matched)}")
 
 
 def create_resequencing_mem_samplesheet(paths: List[pathlib.Path], aliases: Dict, args: argparse.Namespace) -> None:
@@ -410,6 +493,32 @@ def create_rnaseq_samplesheet(paths: List[pathlib.Path], aliases: Dict, args: ar
     logger.info(f"Wrote {record_count} records to samplesheet")
 
 
+def create_methylseq_samplesheet(paths: List[pathlib.Path], aliases: Dict, args: argparse.Namespace) -> None:
+    """
+    Create a samplesheet for nf-core/methylseq: the genome column is empty
+    when --genome is not specified.
+
+    Args:
+        paths: Root directory path(s) containing sample folders
+        aliases: Dictionary of aliases
+        args: Parsed command-line arguments
+    """
+
+    # define header for methylseq format
+    writer = csv.writer(sys.stdout, delimiter=',', lineterminator='\n')
+    header = ['sample', 'fastq_1', 'fastq_2', 'genome']
+    writer.writerow(header)
+    sys.stdout.flush()
+
+    record_count = 0
+    for sample_name, fastq_1, fastq_2 in scan_for_fastq_files(paths, aliases, args):
+        writer.writerow([sample_name, fastq_1, fastq_2, args.genome or ''])
+        sys.stdout.flush()
+        record_count += 1
+
+    logger.info(f"Wrote {record_count} records to samplesheet")
+
+
 def create_mag_samplesheet(paths: List[pathlib.Path], aliases: Dict, args: argparse.Namespace) -> None:
     """
     Create a samplesheet for nf-core/mag for illumina samples
@@ -447,8 +556,11 @@ if __name__ == "__main__":
             logger.error(f"Error: {path} is not a directory")
             sys.exit(1)
 
+    if args.genome and args.format != "methylseq":
+        logger.warning(f"--genome is ignored by the {args.format} format")
+
     logger.info("Starting samplesheet creation")
-    aliases = log_parameters_and_get_aliases(paths, args)
+    aliases =log_parameters_and_get_aliases(paths, args)
 
     if args.format == "nf-resequencing-mem":
         logger.debug("Creating nf-resequencing-mem samplesheet")
@@ -461,6 +573,10 @@ if __name__ == "__main__":
     elif args.format == "rnaseq":
         logger.debug("Creating RNA-seq samplesheet")
         create_rnaseq_samplesheet(paths, aliases, args)
+
+    elif args.format == "methylseq":
+        logger.debug("Creating methylseq samplesheet")
+        create_methylseq_samplesheet(paths, aliases, args)
 
     elif args.format == "mag":
         logger.debug("Creating mag samplesheet")
