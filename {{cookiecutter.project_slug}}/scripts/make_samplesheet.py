@@ -28,7 +28,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--format",
-        choices=["sarek", "nf-resequencing-mem", "rnaseq"],
+        choices=["sarek", "nf-resequencing-mem", "rnaseq", "mag"],
         default="sarek",
         help="Output format for the samplesheet (default: sarek)."
     )
@@ -410,6 +410,33 @@ def create_rnaseq_samplesheet(paths: List[pathlib.Path], aliases: Dict, args: ar
     logger.info(f"Wrote {record_count} records to samplesheet")
 
 
+def create_mag_samplesheet(paths: List[pathlib.Path], aliases: Dict, args: argparse.Namespace) -> None:
+    """
+    Create a samplesheet for nf-core/mag for illumina samples
+
+    Args:
+        paths: Root directory path(s) containing sample folders
+        aliases: Dictionary of aliases
+        args: Parsed command-line arguments
+    """
+
+    # TODO: deal with Nanopore input
+
+    # define header for mag format
+    writer = csv.writer(sys.stdout, delimiter=',', lineterminator='\n')
+    header = ["sample", "group", "short_reads_1", "short_reads_2", "short_reads_platform"]
+    writer.writerow(header)
+    sys.stdout.flush()
+
+    record_count = 0
+    for sample_name, fastq_1, fastq_2 in scan_for_fastq_files(paths, aliases, args):
+        writer.writerow([sample_name, record_count, fastq_1, fastq_2, "ILLUMINA"])
+        sys.stdout.flush()
+        record_count += 1
+
+    logger.info(f"Wrote {record_count} records to samplesheet")
+
+
 if __name__ == "__main__":
     # parse arguments and configure logging
     args = parse_args()
@@ -434,6 +461,10 @@ if __name__ == "__main__":
     elif args.format == "rnaseq":
         logger.debug("Creating RNA-seq samplesheet")
         create_rnaseq_samplesheet(paths, aliases, args)
+
+    elif args.format == "mag":
+        logger.debug("Creating mag samplesheet")
+        create_mag_samplesheet(paths, aliases, args)
 
     else:
         logger.error(f"Unknown format: {args.format}")
