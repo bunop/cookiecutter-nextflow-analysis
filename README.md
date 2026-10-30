@@ -43,17 +43,17 @@ Use [cruft](https://cruft.github.io/cruft/) (`pipx install cruft`) to pull templ
 
 New projects: generate with `cruft create <path-or-url-of-this-repo>` instead of `cookiecutter`.
 
-Projects already generated with `cookiecutter`: inside the project, run `cruft link <path-or-url> --checkout <commit>` (the template commit it was generated from, or the closest one by date), then `git add .cruft.json && git commit`. `link` asks for the cookiecutter answers; give the same ones used originally.
+Projects already generated with `cookiecutter`: inside the project, run `cruft link <path-or-url> --checkout <commit>` (the template commit it was generated from, or the closest one by date), then `git add .cruft.json && git commit`. `link` prompts for the cookiecutter answers: give the same ones used originally. Do not use `-y` alone: it silently takes the defaults of `cookiecutter.json` (e.g. `project_type=unknown`), and `cruft update` would then propose the wrong files. To skip the prompts, pass the answers, e.g. `-y --extra-context '{"project_type": "wf-basecalling"}'`, and check `.cruft.json` afterwards.
 
 Then, from a clean git working tree:
 
 ```bash
 cruft check    # is the template ahead?
 cruft diff     # preview the changes
-cruft update   # apply them; resolve any *.rej files
+cruft update   # apply them
 ```
 
-Review with `git diff --staged` and commit. Files rewritten by the post-generation hook (e.g. `conf/params.json`) are the likeliest to conflict.
+Changes are left uncommitted (`.cruft.json` is modified but not staged). Where a file was edited both locally and in the template, `cruft update` writes git conflict markers (`<<<<<<<`) in it, no `.rej` files: find them with `git status` (`UU`), resolve, then `git add -A` and commit.
 
 ## Claude Code skills
 
