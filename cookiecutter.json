@@ -12,6 +12,7 @@
     "nextflow_as_a_job": false,
     "with_docker": false,
     "use_aws_batch": false,
+    "__pipeline": "{{ 'analysis' if cookiecutter.project_type == 'unknown' else cookiecutter.project_type.split('/')[-1] }}",
     "__prompts__": {
         "project_slug": "Enter the name of your project (used as folder name and prefix for files):",
         "include_data": "Do you want to include a 'data/' folder in the project structure?",

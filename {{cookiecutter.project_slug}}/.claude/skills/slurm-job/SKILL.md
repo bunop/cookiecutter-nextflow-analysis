@@ -1,6 +1,6 @@
 ---
 name: slurm-job
-description: Write (or fix) a SLURM job script in scripts/ to run a long command of this project (seqkit, a helper script in scripts/, nextflow) on the cluster, or run it locally in background when SLURM is not available. Also fills the placeholders (<account>, <time limit>) of an existing script like scripts/launch.sh. Use when the user asks to run something as a job, to create/customize a slurm script, or when a command is too long for the login node.
+description: Write (or fix) a SLURM job script in scripts/ to run a long command of this project (seqkit, a helper script in scripts/, nextflow) on the cluster, or run it locally in background when SLURM is not available. Also fills the placeholders (<account>, <time limit>) of an existing script like scripts/launch-{{ cookiecutter.__pipeline }}.sh. Use when the user asks to run something as a job, to create/customize a slurm script, or when a command is too long for the login node.
 ---
 
 # SLURM job
@@ -61,7 +61,7 @@ Job name, command(s), input → output, resources. Default resources:
 |---|---|---|---|
 | `seqkit stats` (disk bound, `-j 4` is enough) | 4 | 16G | 12:00:00 |
 | `scripts/bedMethyl2cov.py` (single thread) | 1 | 16G | 16:00:00 |
-| nextflow head job (`scripts/launch.sh`) | 2 | 16G | the whole pipeline |
+| nextflow head job (`scripts/launch-{{ cookiecutter.__pipeline }}.sh`) | 2 | 16G | the whole pipeline |
 | anything else | 1 | 8G | ask |
 
 **Account (CINECA only)** is written in the script, so the project is bound to it:
@@ -102,7 +102,7 @@ fi
   the job would fail silently; `logs/` is git-ignored), on a cluster `sbatch --test-only scripts/<name>.sh`
   (validates account/partition/resources without submitting).
 
-### Fixing an existing script (e.g. `scripts/launch.sh`)
+### Fixing an existing script (e.g. `scripts/launch-{{ cookiecutter.__pipeline }}.sh`)
 
 Replace only the placeholders (`<account>`, `<time limit>`, ...) and what the
 user asks, following the same rules: account as above, QoS from the time

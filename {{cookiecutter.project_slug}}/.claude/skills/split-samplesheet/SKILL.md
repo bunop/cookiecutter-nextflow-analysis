@@ -11,7 +11,7 @@ Project type: `{{ cookiecutter.project_type }}`.
 
 Work step by step. Start from what already exists; **ask the user only for
 what is missing** (use one AskUserQuestion with all the open points, not many).
-Never overwrite `conf/samplesheet.csv` or `conf/params.json`: in the end there
+Never overwrite `conf/samplesheet-{{ cookiecutter.__pipeline }}.csv` or `conf/params-{{ cookiecutter.__pipeline }}.json`: in the end there
 will be one samplesheet (and params) per batch.
 
 ## 0. Survey
@@ -73,14 +73,14 @@ python3 scripts/make_samplesheet.py --path <data path> --format nf-resequencing-
 ```
 
 The output has `sample,fastq_1,fastq_2` columns: adapt it to the header
-expected by `{{ cookiecutter.project_type }}` (see `conf/samplesheet.csv`).
+expected by `{{ cookiecutter.project_type }}` (see `conf/samplesheet-{{ cookiecutter.__pipeline }}.csv`).
 {%- else -%}
 ```bash
 python3 scripts/make_samplesheet.py --path <data path> > conf/samplesheet_all.csv
 ```
 
 This uses the script's default format: check its header against
-`conf/samplesheet.csv` and, if it differs, pick another `--format`
+`conf/samplesheet-{{ cookiecutter.__pipeline }}.csv` and, if it differs, pick another `--format`
 (see `--help`; `--format mag` is for nf-core/mag, Illumina only).
 {%- endif %}
 
@@ -104,7 +104,7 @@ rows/columns (Excel exports), clean it first with `/clean-csv`. Then:
 
 - **Metadata has the fastq paths** (R1/R2 columns): skip `make_samplesheet.py` and
   select the rows with csvkit, writing the header expected by the pipeline
-  (see `conf/samplesheet.csv`) and the paths relative to the project root:
+  (see `conf/samplesheet-{{ cookiecutter.__pipeline }}.csv`) and the paths relative to the project root:
 
   ```bash
   csvgrep -d ";" -c "<column>" -r "<regex>" <metadata> | \
@@ -154,11 +154,11 @@ if the batch has 6 samples or fewer, tell the user the test set is the whole
 batch) and write, keeping the header and all rows (lanes) of those samples:
 
 - `conf/samplesheet-test.csv`
-- `conf/params-test.json`: a copy of `conf/params.json` with `input`
+- `conf/params-{{ cookiecutter.__pipeline }}-test.json`: a copy of `conf/params-{{ cookiecutter.__pipeline }}.json` with `input`
   pointing to `conf/samplesheet-test.csv` and a test output folder; ask the
   user for values still left as `<placeholder>` (e.g. S3 paths).
 
-Do not write in `conf/samplesheet.csv` or `conf/params.json`.
+Do not write in `conf/samplesheet-{{ cookiecutter.__pipeline }}.csv` or `conf/params-{{ cookiecutter.__pipeline }}.json`.
 
 ## 5. Documentation
 
@@ -169,7 +169,7 @@ the scripts, number of samples and size of each batch.
 
 ## 6. Git
 
-- Remove the template files no longer needed (e.g. `conf/samplesheet.csv` if
+- Remove the template files no longer needed (e.g. `conf/samplesheet-{{ cookiecutter.__pipeline }}.csv` if
   only the per-batch files are used, `.gitkeep` files in non-empty folders,
   placeholder text in the README): list them and ask before deleting.
 - `conf/seq_stats.tsv` is small: commit it.

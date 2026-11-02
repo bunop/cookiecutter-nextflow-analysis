@@ -8,6 +8,7 @@ project_slug = "{{ cookiecutter.project_slug }}"
 include_data_raw = "{{ cookiecutter.include_data }}".strip().lower()
 include_data = include_data_raw in ("yes", "y", "true", "1")
 project_type = "{{ cookiecutter.project_type }}".lower()
+pipeline = "{{ cookiecutter.__pipeline }}"
 nextflow_as_a_job_raw = "{{ cookiecutter.nextflow_as_a_job }}".strip().lower()
 nextflow_as_a_job = nextflow_as_a_job_raw in ("yes", "y", "true", "1")
 use_aws_batch_raw = "{{ cookiecutter.use_aws_batch }}".strip().lower()
@@ -28,7 +29,7 @@ data_dir = os.path.join(project_dir, "data")
 scripts_dir = os.path.join(project_dir, "scripts")
 
 # define params file path
-params_path = os.path.join(project_dir, "conf", "params.json")
+params_path = os.path.join(project_dir, "conf", f"params-{pipeline}.json")
 
 print(f"Post generation script started in {project_dir}")
 print(f"Project type selected: {project_type}")
@@ -46,7 +47,7 @@ if not include_data:
 
 if not nextflow_as_a_job:
     # If not setting up Nextflow as a job, remove the launch script
-    os.remove(os.path.join(scripts_dir, "launch.sh"))
+    os.remove(os.path.join(scripts_dir, f"launch-{pipeline}.sh"))
 
 # some template configurations for different project types
 json_params = {
@@ -109,7 +110,7 @@ with open(params_path, "w") as f:
     json.dump(json_params.get(project_type, json_params["unknown_params"]), f, indent=4)
     f.write('\n')
 
-print(f"Project type set to '{project_type}'. Configuration file 'conf/params.json' updated accordingly.")
+print(f"Project type set to '{project_type}'. Configuration file 'conf/params-{pipeline}.json' updated accordingly.")
 print("Please edit it further as needed.")
 
 # helper scripts shipped in scripts/ only for the project type that uses them

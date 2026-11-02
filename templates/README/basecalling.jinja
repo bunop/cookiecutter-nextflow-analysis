@@ -9,12 +9,12 @@
     - <collect_container_sha_basecalling>: The sha of the dorado docker image,
         which can be found in the `base.config` file.
     - <your_dorado_models_path>: The path where dorado models are stored: need to
-        be replaced in `README.md` and in `conf/custom.config`.
+        be replaced in `README.md` and in `conf/custom-{{ cookiecutter.__pipeline }}.config`.
     - <source_pod5_folder>: The folder containing pod5 files.
-    - <samplesheet_data>: The content of the `conf/samplesheet.csv` file.
+    - <samplesheet_data>: The content of the `conf/samplesheet-{{ cookiecutter.__pipeline }}.csv` file.
     - <available_dorado_models>: The output of the command to list available dorado models.
     - <pipeline_results_folder>: The folder where the pipeline results are stored:
-        need to be replaced in `README.md` and in `conf/params.json`.
+        need to be replaced in `README.md` and in `conf/params-{{ cookiecutter.__pipeline }}.json`.
     - <XXX-XXXXX-XX>: The barcode kit name used for demultiplexing.
 -->
 
@@ -67,7 +67,7 @@ singularity run --bind <your_dorado_models_path> \
 {%- endif %}
 ```
 
-Then ensure that the `conf/custom.config` file has the correct path to the models:
+Then ensure that the `conf/custom-{{ cookiecutter.__pipeline }}.config` file has the correct path to the models:
 
 ```groovy
 {%- if cookiecutter.with_docker %}
@@ -104,7 +104,7 @@ find <source_pod5_folder> -type f -name "*.pod5" -exec ln -s {} . \;
 
 ## Creating samplesheet
 
-Create `conf/samplesheet.csv` like this:
+Create `conf/samplesheet-{{ cookiecutter.__pipeline }}.csv` like this:
 
 ```csv
 experiment_id,kit,flow_cell_id,barcode,alias
@@ -129,10 +129,10 @@ And from `sample_sheet_*.csv` file.
 > for example:
 >
 > ```bash
-> file conf/samplesheet.csv
-> sed -i '1s/^\xEF\xBB\xBF//' conf/samplesheet.csv
-> file conf/samplesheet.csv
-> dos2unix conf/samplesheet.csv
+> file conf/samplesheet-{{ cookiecutter.__pipeline }}.csv
+> sed -i '1s/^\xEF\xBB\xBF//' conf/samplesheet-{{ cookiecutter.__pipeline }}.csv
+> file conf/samplesheet-{{ cookiecutter.__pipeline }}.csv
+> dos2unix conf/samplesheet-{{ cookiecutter.__pipeline }}.csv
 > ```
 
 ## List available models
@@ -166,9 +166,9 @@ You will need to specify models belonging to different contexts (ex: `C` and `A`
 ## Calling wf-basecalling pipeline
 
 > [!WARNING]
-> please ensure that the `conf/custom.config` file has the correct path to the models
+> please ensure that the `conf/custom-{{ cookiecutter.__pipeline }}.config` file has the correct path to the models
 > and the correct `DRD_MODELS_PATH` environment variable. Please also ensure that the
-> `conf/params.json` file has the correct path to the results folder and the proper
+> `conf/params-{{ cookiecutter.__pipeline }}.json` file has the correct path to the results folder and the proper
 > dorado models selected
 
 > [!NOTE]
@@ -182,7 +182,7 @@ using:
 
 ```bash
 NXF_VER='25.10.4' nextflow run bunop/wf-basecalling -r v1.5.9-mc -profile {% if cookiecutter.with_docker %}standard{% else %}singularity{% endif %} -resume \
-    -c conf/custom.config -params-file conf/params.json
+    -c conf/custom-{{ cookiecutter.__pipeline }}.config -params-file conf/params-{{ cookiecutter.__pipeline }}.json
 ```
 
 > [!NOTE]
@@ -250,14 +250,14 @@ docker run -ti --rm --user $(id -u):$(id -g) --group-add 100 --volume ${PWD}:${P
     ontresearch/dorado:<collect_container_sha_basecalling> \
     dorado demux --kit-name <XXX-XXXXX-XX> --threads 2 --verbose \
     --output-dir ${PWD}/demux --emit-fastq --emit-summary \
-    --sample-sheet ${PWD}/conf/samplesheet.csv \
+    --sample-sheet ${PWD}/conf/samplesheet-{{ cookiecutter.__pipeline }}.csv \
     ${PWD}/<pipeline_results_folder>/SAMPLE.pass.all.cram
 {%- else %}
 singularity run --bind ${PWD} \
     ${NXF_SINGULARITY_CACHEDIR}/ontresearch-dorado-<collect_container_sha_basecalling>.img \
     dorado demux --kit-name <XXX-XXXXX-XX> --threads 2 --verbose \
     --output-dir ${PWD}/demux --emit-fastq --emit-summary \
-    --sample-sheet ${PWD}/conf/samplesheet.csv \
+    --sample-sheet ${PWD}/conf/samplesheet-{{ cookiecutter.__pipeline }}.csv \
     ${PWD}/<pipeline_results_folder>/SAMPLE.pass.all.cram
 {%- endif %}
 ```
@@ -277,14 +277,14 @@ docker run -ti --rm --user $(id -u):$(id -g) --group-add 100 --volume ${PWD}:${P
     ontresearch/dorado:<collect_container_sha_basecalling> \
     dorado demux --kit-name <XXX-XXXXX-XX> --threads 2 --verbose \
     --output-dir ${PWD}/demux --emit-summary \
-    --sample-sheet ${PWD}/conf/samplesheet.csv \
+    --sample-sheet ${PWD}/conf/samplesheet-{{ cookiecutter.__pipeline }}.csv \
     ${PWD}/<pipeline_results_folder>/SAMPLE.pass.all.cram
 {%- else %}
 singularity run --bind ${PWD} \
     ${NXF_SINGULARITY_CACHEDIR}/ontresearch-dorado-<collect_container_sha_basecalling>.img \
     dorado demux --kit-name <XXX-XXXXX-XX> --threads 2 --verbose \
     --output-dir ${PWD}/demux --emit-summary \
-    --sample-sheet ${PWD}/conf/samplesheet.csv \
+    --sample-sheet ${PWD}/conf/samplesheet-{{ cookiecutter.__pipeline }}.csv \
     ${PWD}/<pipeline_results_folder>/SAMPLE.pass.all.cram
 {%- endif %}
 ```

@@ -17,7 +17,7 @@ head -n 3 <file>; tail -n 3 <file>
 ```
 
 Excel exports often end with rows like `,,,,` and have unnamed empty columns.
-Raw files in `data/` and `conf/samplesheet.csv` are never modified without an
+Raw files in `data/` and `conf/samplesheet-{{ cookiecutter.__pipeline }}.csv` are never modified without an
 explicit confirmation: write a new file (e.g. `conf/metadata_clean.csv`).
 
 ## 2. Run the script
