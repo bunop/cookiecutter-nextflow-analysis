@@ -57,7 +57,7 @@ cruft diff     # preview the changes
 cruft update   # apply them
 ```
 
-Changes are left uncommitted (`.cruft.json` is modified but not staged). Where a file was edited both locally and in the template, `cruft update` writes git conflict markers (`<<<<<<<`) in it, no `.rej` files: find them with `git status` (`UU`), resolve, then `git add -A` and commit.
+Changes are left uncommitted (`.cruft.json` is modified but not staged). Where a file was edited both locally and in the template, `cruft update` usually writes git conflict markers (`<<<<<<<`) in it (`UU` in `git status`); if the 3-way merge is not possible, it falls back to `*.rej` files instead. Find both (`git status`, `find . -name '*.rej'`), resolve, delete the `.rej` files, then `git add -A` and commit.
 
 ## Claude Code skills
 
