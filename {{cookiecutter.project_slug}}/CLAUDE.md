@@ -16,6 +16,9 @@ from the project root and keep paths relative to it: raw data in `data/`
 Never launch a job, a pipeline or a long command without first summarizing
 what will run and getting an explicit confirmation.
 
+Copies to/from CINECA (`rsync`) and md5 checks: `/transfer-data` only writes the
+commands in the README, the user runs them (long, needs their ssh key).
+
 ## Running tools (seqkit, csvkit, bcftools, ...)
 
 Use the first that works; if none does, ask the user.
