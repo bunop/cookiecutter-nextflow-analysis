@@ -127,3 +127,9 @@ for script, script_type in type_scripts.items():
 if not use_aws_batch:
     os.remove(os.path.join(scripts_dir, "aws_costs.py"))
     shutil.rmtree(os.path.join(project_dir, ".claude", "skills", "aws-costs"))
+
+# the CPU-hours estimate is calibrated on a nf-core/methylseq run only
+if project_type != "nf-core/methylseq":
+    os.remove(os.path.join(scripts_dir, "estimate_cpu_hours.py"))
+    os.remove(os.path.join(project_dir, "conf", "cpu_model.json"))
+    shutil.rmtree(os.path.join(project_dir, ".claude", "skills", "estimate-cpu-hours"))
