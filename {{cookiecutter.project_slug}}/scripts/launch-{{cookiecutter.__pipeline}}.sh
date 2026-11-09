@@ -4,9 +4,9 @@
 #SBATCH --cpus-per-task=2
 #SBATCH --time=<time limit>
 #SBATCH --mem=16G
-#SBATCH --signal=B:TERM@1800           # SIGTERM to the batch shell 30 min before the time limit (use --time above 30 min)
-#SBATCH --output=%x-%j.out              # using job_name + job_id as log file
-#SBATCH --job-name={{ cookiecutter.project_type.split('/')[-1] }}
+#SBATCH --signal=B:TERM@1800            # SIGTERM to the batch shell 30 min before the time limit (use --time above 30 min)
+#SBATCH --output=logs/%x-%j.out         # using job_name + job_id as log file
+#SBATCH --job-name={{ cookiecutter.project_type.split('/')[-1] }}-{{ cookiecutter.project_slug }}
 {% include "cineca.sh" %}
 
 # set the path of institution-specific configuration files
