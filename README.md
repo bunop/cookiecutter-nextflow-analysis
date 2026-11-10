@@ -14,7 +14,7 @@ A cookiecutter template for creating reproducible data analysis with nextflow.
 
 ```bash
 pipx install cruft
-cruft create https://github.com/bunop/cookiecutter-nextflow-analysis.git
+cruft create https://github.com/cnr-ibba/cookiecutter-nextflow-analysis.git
 ```
 
 `cruft` is the recommended way: it records the template version in `.cruft.json`, so the project can later be [updated](#updating-existing-projects) when the template changes. Plain `cookiecutter <url>` also works, but the project cannot be updated without `cruft link`.
@@ -39,7 +39,7 @@ cruft create https://github.com/bunop/cookiecutter-nextflow-analysis.git
 
 ## Usage
 
-Customize `cookiecutter.json` with your project parameters, then generate a new project structure.
+From a clone of this repo, `cookiecutter .` prompts for the values in `cookiecutter.json`; use `--no-input key=value ...` to skip the prompts (e.g. `cookiecutter . --no-input project_type=wf-basecalling`).
 
 ## Updating existing projects
 
@@ -67,6 +67,8 @@ Generated projects ship with [Claude Code](https://claude.com/claude-code) skill
 - `/aws-costs` (only with `use_aws_batch`): reads the cost of a run on AWS Batch with `scripts/aws_costs.py` (Cost Explorer, CloudTrail, Batch), writes CSV files in `docs/aws-costs/` and forecasts the cost of the full dataset.
 - `/clean-csv`: removes the UTF-8 BOM and the completely empty rows and columns from a CSV (e.g. an Excel export) with `scripts/clean_csv.py`.
 - `/slurm-job`: writes a SLURM job script in `scripts/` (or fills the placeholders of `scripts/launch-<pipeline>.sh`) for the detected cluster (CINECA/CNR), or runs the command locally; always asks before launching.
+- `/estimate-cpu-hours` (only `nf-core/methylseq`): predicts the requested CPU-hours from the number of read pairs with `scripts/estimate_cpu_hours.py` and the pre-fitted `conf/cpu_model.json`.
+- `/transfer-data`: writes the `rsync` and md5 commands to copy data to/from CINECA (does not run them).
 
 ## Contributing
 
