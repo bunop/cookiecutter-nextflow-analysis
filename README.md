@@ -67,7 +67,7 @@ Generated projects ship with [Claude Code](https://claude.com/claude-code) skill
 - `/aws-costs` (only with `use_aws_batch`): reads the cost of a run on AWS Batch with `scripts/aws_costs.py` (Cost Explorer, CloudTrail, Batch), writes CSV files in `docs/aws-costs/` and forecasts the cost of the full dataset.
 - `/clean-csv`: removes the UTF-8 BOM and the completely empty rows and columns from a CSV (e.g. an Excel export) with `scripts/clean_csv.py`.
 - `/slurm-job`: writes a SLURM job script in `scripts/` (or fills the placeholders of `scripts/launch-<pipeline>.sh`) for the detected cluster (CINECA/CNR), or runs the command locally; always asks before launching.
-- `/estimate-cpu-hours` (only `nf-core/methylseq`): predicts the requested CPU-hours from the number of read pairs with `scripts/estimate_cpu_hours.py` and the pre-fitted `conf/cpu_model.json` (one key per pipeline).
+- `/estimate-cpu-hours` (only `nf-core/methylseq` and `nf-core/rnaseq`): predicts the requested CPU-hours from the number of read pairs with `scripts/estimate_cpu_hours.py` and the pre-fitted `conf/cpu_model.json` (one key per pipeline).
 - `/transfer-data`: writes the `rsync` and md5 commands to copy data to/from CINECA (does not run them).
 
 ## Contributing
