@@ -1,25 +1,27 @@
 {
-  "unit": "CPU-h (requested cpus x realtime) per million reads",
-  "n_samples": 42,
-  "per_million_reads": {
-    "FASTQC": 0.013303058298201336,
-    "TRIMGALORE": 0.12219671591059007,
-    "BISMARK_ALIGN": 1.0186908944559772,
-    "BISMARK_METHYLATIONEXTRACTOR": 0.15363793757563682,
-    "SAMTOOLS_SORT": 0.005187560213315844,
-    "SAMTOOLS_INDEX": 0.00023034384942045957,
-    "BISMARK_REPORT": 1.4831226123341703e-06
-  },
-  "fixed_cpu_h": {
-    "BISMARK_GENOMEPREPARATION_BOWTIE": 15.825266666666666,
-    "BISMARK_SUMMARY": 0.006305555555555556,
-    "MULTIQC": 0.038011111111111114
-  },
-  "loo_sample_rel_err_rmse": 0.05329793424352017,
-  "loo_total_rel_err": 0.004771014714316948,
-  "retention_total": 0.8563854737083532,
-  "retention_range": [
-    0.166035172991273,
-    0.9658565880483863
-  ]
+  "methylseq": {
+    "unit": "CPU-h (requested cpus x realtime) per million reads",
+    "n_samples": 98,
+    "per_million_reads": {
+      "FASTQC": 0.013367014238943651,
+      "TRIMGALORE": 0.119006076514732,
+      "BISMARK_ALIGN": 1.0022157493877482,
+      "BISMARK_METHYLATIONEXTRACTOR": 0.14957001162375458,
+      "SAMTOOLS_SORT": 0.011615976926463701,
+      "SAMTOOLS_INDEX": 0.0002700324515145597,
+      "BISMARK_REPORT": 4.9256498349392046e-06
+    },
+    "fixed_cpu_h": {
+      "BISMARK_GENOMEPREPARATION_BOWTIE": 16.219425,
+      "BISMARK_SUMMARY": 0.004746111111111111,
+      "MULTIQC": 0.028386805555555557
+    },
+    "loo_sample_rel_err_rmse": 0.04947772031526203,
+    "loo_total_rel_err": 0.002114367017057622,
+    "retention_total": 0.8767693092222709,
+    "retention_range": [
+      0.166035172991273,
+      0.975300845485918
+    ]
+  }
 }

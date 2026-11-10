@@ -45,15 +45,21 @@ def read_raw_millions(multiqc_fastqc):
                 for r in csv.DictReader(f, delimiter="\t") if r["Sample"].endswith("_1")}
 
 
-def fit(report, bismark_alignment, fastqc, out):
-    reads = read_millions(bismark_alignment)
+def fit(runs, out, pipeline):
+    """runs: list of (report, bismark_alignment, fastqc), pooled; sample names must be unique across runs"""
+    reads, raw = {}, {}
     per_sample = collections.defaultdict(dict)  # process -> sample -> cpu-h
     fixed = collections.defaultdict(float)
-    for proc, sample, cpuh in read_tasks(report):
-        if sample in reads:
-            per_sample[proc][sample] = per_sample[proc].get(sample, 0) + cpuh
-        else:
-            fixed[proc] += cpuh
+    for report, bismark_alignment, fastqc in runs:
+        run_reads = read_millions(bismark_alignment)
+        assert not set(run_reads) & set(reads), "sample names repeated across runs"
+        reads.update(run_reads)
+        raw.update(read_raw_millions(fastqc))
+        for proc, sample, cpuh in read_tasks(report):
+            if sample in run_reads:
+                per_sample[proc][sample] = per_sample[proc].get(sample, 0) + cpuh
+            else:
+                fixed[proc] += cpuh / len(runs)  # once-per-run processes: mean over runs
 
     def coef(procs, skip=None):
         num = sum(per_sample[p][s] * reads[s] for p in procs for s in per_sample[p] if s != skip)
@@ -76,17 +82,19 @@ def fit(report, bismark_alignment, fastqc, out):
         coef([p], skip=s) * reads[s] for s in samples for p in per_sample if s in per_sample[p]
     ) - total_true) / total_true
     # trimming (RRBS length filter) drops reads: fraction of FASTQ reads reaching bismark
-    raw = read_raw_millions(fastqc)
     ratios = [reads[s] / raw[s] for s in samples if s in raw]
     model["retention_total"] = sum(reads[s] for s in samples) / sum(raw[s] for s in samples if s in reads)
     model["retention_range"] = [min(ratios), max(ratios)]
-    pathlib.Path(out).write_text(json.dumps(model, indent=2) + "\n")
-    print(f"{len(samples)} samples, {total_true + sum(fixed.values()):.0f} CPU-h in the run; "
+    path = pathlib.Path(out)
+    models = json.loads(path.read_text()) if path.exists() else {}
+    models[pipeline] = model  # other pipelines in the file are kept
+    path.write_text(json.dumps(models, indent=2) + "\n")
+    print(f"{len(runs)} run(s), {len(samples)} samples, {total_true:.0f} per-sample CPU-h; "
           f"LOO error per sample {model['loo_sample_rel_err_rmse']:.1%}, total {model['loo_total_rel_err']:.1%}")
 
 
-def predict(model_path, million_reads, genome_prep, raw):
-    model = json.loads(pathlib.Path(model_path).read_text())
+def predict(model_path, pipeline, million_reads, genome_prep, raw):
+    model = json.loads(pathlib.Path(model_path).read_text())[pipeline]
     if raw:  # FASTQ read pairs (seqkit num_seqs of R1) -> reads reaching bismark
         million_reads *= model["retention_total"]
         lo, hi = model["retention_range"]
@@ -107,17 +115,18 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     f = sub.add_parser("fit")
-    f.add_argument("--report", required=True, help="execution_report_*.html")
-    f.add_argument("--bismark-alignment", required=True, help="multiqc_data/bismark_alignment.txt")
-    f.add_argument("--fastqc", required=True, help="multiqc_data/multiqc_fastqc.txt")
+    f.add_argument("--run", nargs=3, action="append", required=True,
+                   metavar=("REPORT", "BISMARK_ALIGNMENT", "FASTQC"),
+                   help="execution_report_*.html, multiqc_data/bismark_alignment.txt, multiqc_data/multiqc_fastqc.txt; repeat to pool runs")
     f.add_argument("--out", default="conf/cpu_model.json")
-    p = sub.add_parser("predict")
+    for sp in (f, p := sub.add_parser("predict")):
+        sp.add_argument("--pipeline", default="methylseq", help="key in cpu_model.json")
     p.add_argument("--million-reads", type=float, required=True, help="total read pairs of all samples (R1 num_seqs), in millions")
     p.add_argument("--aligned", action="store_true", help="the number is already the reads given to bismark (after trimming)")
     p.add_argument("--model", default="conf/cpu_model.json")
     p.add_argument("--no-genome-prep", action="store_true", help="bismark index already available")
     a = ap.parse_args()
     if a.cmd == "fit":
-        fit(a.report, a.bismark_alignment, a.fastqc, a.out)
+        fit(a.run, a.out, a.pipeline)
     else:
-        predict(a.model, a.million_reads, not a.no_genome_prep, not a.aligned)
+        predict(a.model, a.pipeline, a.million_reads, not a.no_genome_prep, not a.aligned)
